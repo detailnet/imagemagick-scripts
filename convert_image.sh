@@ -13,6 +13,13 @@ function usage() {
  	echo "-i, --input              Input file. Mandatory."
  	echo "-o, --output             Output file. Default \"-\"."
  	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"0\"."
+ 	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
+ 	echo "                         Default "SVG,EPS". Note: to identify format of image use:"
+ 	echo "                         \"convert <image> -print "%m\n" null:\""
+ 	echo "                         Listing recognised formats: \"identify -list format\""
+ 	echo "-id, --input-density     Input density, used only for vector graphic images."
+ 	echo "                         Default \"1200\"."
+ 	echo "                         Note: high values cause high load and  performance issues."
  	echo "-s, --size               Thumbnail size. Default \"200x200>\"."                     # http://www.imagemagick.org/script/command-line-processing.php#geometry
  	echo "-d, --density            Density. Default \"72\"."                                  # http://www.imagemagick.org/script/command-line-options.php#density
  	echo "-q, --quality            JPEG quality. Default \"80\"."
@@ -42,6 +49,8 @@ DENSITY="72"
 QUALITY="80"
 BACKGROUND="white"
 ALPHA="remove"
+VECTOR_FORMATS="SVG,EPS"
+INPUT_DENSITY="1200"
 OUTPUT_FILE="-"
 LOGENTRIES_URL="data.logentries.com"
 LOGENTRIES_PORT="10000"
@@ -110,6 +119,24 @@ while test $# -gt 0; do
                 DENSITY=$1
             else
             	usage_exit "No density given."
+            fi
+			shift
+		    ;;
+		-id|--input-density)
+		    shift
+            if test $# -gt 0; then
+                INPUT_DENSITY=$1
+            else
+            	usage_exit "No input density given."
+            fi
+			shift
+		    ;;
+		-fv|--vector-formats)
+		    shift
+            if test $# -gt 0; then
+                VECTOR_FORMATS=$1
+            else
+            	usage_exit "No vector graphic formats given."
             fi
 			shift
 		    ;;
@@ -193,8 +220,17 @@ function log() {
 ${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
+# Test if is vector graphic
+FORMAT=`${CONVERT} "${INPUT_FILE}[${PAGE}]" -print "%m\n" null: 2>/dev/null`
+IS_VECTOR=`echo "${VECTOR_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
+
 # Build convert command, NOTE: order of commands is very important for convert
 COMMAND="${CONVERT}"
+
+if [ ! ${IS_VECTOR} -eq 0 ]; then
+    echo "Vector graphic image."
+    COMMAND="${COMMAND} -density ${INPUT_DENSITY}"
+fi
 
 if [ ${HAS_PROFILE} -eq 0 ]
 then
@@ -207,8 +243,8 @@ fi
 
 COMMAND="${COMMAND} ${INPUT_FILE}[${PAGE}] -profile ${SRGB_PROFILE_FILE}"
 COMMAND="${COMMAND} -background ${BACKGROUND} -alpha ${ALPHA}"
-COMMAND="${COMMAND} -density ${DENSITY}"
 COMMAND="${COMMAND} -thumbnail ${SIZE}"
+COMMAND="${COMMAND} -density ${DENSITY}"
 COMMAND="${COMMAND} -quality ${QUALITY}"
 COMMAND="${COMMAND} ${REMAINING}"
 COMMAND="${COMMAND} ${OUTPUT_FILE}"
