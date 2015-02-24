@@ -13,11 +13,12 @@ function usage() {
  	echo "-i, --input              Input file. Mandatory."
  	echo "-o, --output             Output file. Default \"-\"."
  	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"0\"."
- 	echo "-s, --size               Thumbnail size. Default \"200x200>\"."                # http://www.imagemagick.org/script/command-line-processing.php#geometry
- 	echo "-d, --density            Density. Default \"72\"."
+ 	echo "-s, --size               Thumbnail size. Default \"200x200>\"."                     # http://www.imagemagick.org/script/command-line-processing.php#geometry
+ 	echo "-d, --density            Density. Default \"72\"."                                  # http://www.imagemagick.org/script/command-line-options.php#density
  	echo "-q, --quality            JPEG quality. Default \"80\"."
-# 	echo "-b, --background         Set background of image, might not be shown (depends on alpha)."                     # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
-# 	echo "-a, --alpha              Modify alpha channel of an image"                     # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
+ 	echo "-b, --background         Set background of image, might not be shown (depends on alpha)."
+ 	echo "                         Default \"white\"."
+ 	echo "-a, --alpha              Modify alpha channel of an image. Default \"remove\"."      # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
  	echo "-lt, --logentries-token  Logentries token. If not given no logging performed."
  	echo "-lu, --logentries-url    Logentries url. Default \"data.logentries.com\"."
  	echo "-lp, --logentries-port   Logentries port. Default \"10000\"."
@@ -39,6 +40,8 @@ SIZE="200x200>"
 PAGE="0"
 DENSITY="72"
 QUALITY="80"
+BACKGROUND="white"
+ALPHA="remove"
 OUTPUT_FILE="-"
 LOGENTRIES_URL="data.logentries.com"
 LOGENTRIES_PORT="10000"
@@ -119,6 +122,24 @@ while test $# -gt 0; do
             fi
 			shift
 		    ;;
+		-a|--alpha)
+		    shift
+            if test $# -gt 0; then
+                ALPHA=$1
+            else
+            	usage_exit "No alpha given."
+            fi
+			shift
+		    ;;
+		-b|--background)
+		    shift
+            if test $# -gt 0; then
+                BACKGROUND=$1
+            else
+            	usage_exit "No background given."
+            fi
+			shift
+		    ;;
 		-lt|--logentries-token)
 		    shift
             if test $# -gt 0; then
@@ -172,7 +193,7 @@ function log() {
 ${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
-# Build convert command, not order of commands is important for convert
+# Build convert command, NOTE: order of commands is very important for convert
 COMMAND="${CONVERT}"
 
 if [ ${HAS_PROFILE} -eq 0 ]
@@ -185,8 +206,9 @@ else
 fi
 
 COMMAND="${COMMAND} ${INPUT_FILE}[${PAGE}] -profile ${SRGB_PROFILE_FILE}"
+COMMAND="${COMMAND} -background ${BACKGROUND} -alpha ${ALPHA}"
+COMMAND="${COMMAND} -density ${DENSITY}"
 COMMAND="${COMMAND} -thumbnail ${SIZE}"
-COMMAND="${COMMAND} -density ${DENSITY}" #http://www.imagemagick.org/script/command-line-options.php#density
 COMMAND="${COMMAND} -quality ${QUALITY}"
 COMMAND="${COMMAND} ${REMAINING}"
 COMMAND="${COMMAND} ${OUTPUT_FILE}"
