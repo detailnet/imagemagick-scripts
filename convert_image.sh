@@ -22,7 +22,6 @@ if [ $? -eq 0 ]
 then
   echo "Successfully converted image and saved to $output_file"
 else
-  echo "No color profile found"
   echo "Failed to convert image"
 fi
 
