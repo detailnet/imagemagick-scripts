@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 
 input_file="$1"
 output_file="$2"
@@ -15,7 +15,7 @@ profile_output=`convert $input_file $profile_file 2>&1`
 if [ $? -eq 0 ]
 then
   echo "Color profile found"
-  conversion_output=`convert -profileee $profile_file $input_file -profile $srgb_profile_file -thumbnail $size\x$size\> -density 72 $output_file 2>&1`
+  conversion_output=`convert -profile $profile_file $input_file -profile $srgb_profile_file -thumbnail $size\x$size\> -density 72 $output_file 2>&1`
 else
   echo "No color profile found"
   conversion_output=`convert $input_file -profile $srgb_profile_file -thumbnail $sizex$size\> -density 72 $output_file 2>&1`
