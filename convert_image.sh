@@ -11,10 +11,13 @@ function usage() {
 	echo "-h, --help               Show brief help."
 	echo "-v, --verbose            Verbose output." # Is more a script debug mode
  	echo "-i, --input              Input file. Mandatory."
- 	echo "-o, --output             Output file. Default \"- \"."
- 	echo "-s, --size               Thumbnail size. Default \"200x200>\"." # http://www.imagemagick.org/script/command-line-processing.php#geometry
+ 	echo "-o, --output             Output file. Default \"-\"."
+ 	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"0\"."
+ 	echo "-s, --size               Thumbnail size. Default \"200x200>\"."                # http://www.imagemagick.org/script/command-line-processing.php#geometry
  	echo "-d, --density            Density. Default \"72\"."
  	echo "-q, --quality            JPEG quality. Default \"80\"."
+# 	echo "-b, --background         Set background of image, might not be shown (depends on alpha)."                     # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
+# 	echo "-a, --alpha              Modify alpha channel of an image"                     # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
  	echo "-lt, --logentries-token  Logentries token. If not given no logging performed."
  	echo "-lu, --logentries-url    Logentries url. Default \"data.logentries.com\"."
  	echo "-lp, --logentries-port   Logentries port. Default \"10000\"."
@@ -33,6 +36,7 @@ function usage_exit() {
 PROFILE_FILE="profile.icc"
 SRGB_PROFILE_FILE="sRGB.icm"
 SIZE="200x200>"
+PAGE="0"
 DENSITY="72"
 QUALITY="80"
 OUTPUT_FILE="-"
@@ -85,6 +89,15 @@ while test $# -gt 0; do
                 SIZE=$1
             else
                 usage_exit "No size given.";
+            fi
+			shift
+		    ;;
+		-p|--page|--layer)
+		    shift
+            if test $# -gt 0; then
+                PAGE=$1
+            else
+                usage_exit "No page given.";
             fi
 			shift
 		    ;;
@@ -155,9 +168,8 @@ function log() {
     fi
 }
 
-
 # Test if profile is given
-${CONVERT} ${INPUT_FILE} ${PROFILE_FILE} 2>/dev/null
+${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
 # Build convert command, not order of commands is important for convert
@@ -172,7 +184,7 @@ else
   echo "No color profile found"
 fi
 
-COMMAND="${COMMAND} ${INPUT_FILE} -profile ${SRGB_PROFILE_FILE}"
+COMMAND="${COMMAND} ${INPUT_FILE}[${PAGE}] -profile ${SRGB_PROFILE_FILE}"
 COMMAND="${COMMAND} -thumbnail ${SIZE}"
 COMMAND="${COMMAND} -density ${DENSITY}" #http://www.imagemagick.org/script/command-line-options.php#density
 COMMAND="${COMMAND} -quality ${QUALITY}"
