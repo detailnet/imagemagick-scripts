@@ -1,4 +1,5 @@
 #!/bin/bash
+#set -x
 
 function usage() {
 	echo ""
@@ -7,15 +8,24 @@ function usage() {
 	echo "Usage: $(basename $0) -i input_file [options] [convert options]"
 	echo ""
 	echo "options:"
-	echo "-h, --help               Show brief help"
-	echo "-v, --verbose            Verbose output" # chenge to debug
- 	echo "-i, --input              Input file. Mandatory"
- 	echo "-o, --output             Output file. Default -"
- 	echo "-s, --size               Thumbnail size. Default 200x200>" # http://www.imagemagick.org/script/command-line-processing.php#geometry
- 	echo "-d, --density            Density. Default 72"
+	echo "-h, --help               Show brief help."
+	echo "-v, --verbose            Verbose output." # Is more a script debug mode
+ 	echo "-i, --input              Input file. Mandatory."
+ 	echo "-o, --output             Output file. Default \"- \"."
+ 	echo "-s, --size               Thumbnail size. Default \"200x200>\"." # http://www.imagemagick.org/script/command-line-processing.php#geometry
+ 	echo "-d, --density            Density. Default \"72\"."
+ 	echo "-lt, --logentries-token  Logentries token. If not given no logging performed."
+ 	echo "-lu, --logentries-url    Logentries url. Default \"data.logentries.com\"."
+ 	echo "-lp, --logentries-port   Logentries port. Default \"10000\"."
 	echo ""
 	echo "convert options: see 'convert --help'"
 	echo ""
+}
+
+function usage_exit() {
+    echo $@
+    usage
+    exit 1
 }
 
 # Set defaults
@@ -24,6 +34,10 @@ SRGB_PROFILE_FILE="sRGB.icm"
 SIZE="200x200>"
 DENSITY="72"
 OUTPUT_FILE="-"
+LOGENTRIES_URL="data.logentries.com"
+LOGENTRIES_PORT="10000"
+LOGENTRIES_TOKEN=""
+
 
 # Check ImageMagick convert
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
@@ -50,9 +64,7 @@ while test $# -gt 0; do
             if test $# -gt 0; then
                 INPUT_FILE=$1
             else
-            	echo "No input file given."
-            	usage
-            	exit 1
+                usage_exit "No input file given."
             fi
 			shift
 			;;
@@ -61,10 +73,8 @@ while test $# -gt 0; do
             if test $# -gt 0; then
                 OUTPUT_FILE=$1
             else
-            	echo "No output file given."
-            	usage
-            	exit 1
-            fi
+                usage_exit "No output file given."
+             fi
 			shift
 			;;
 		-s|--size)
@@ -72,9 +82,7 @@ while test $# -gt 0; do
             if test $# -gt 0; then
                 SIZE=$1
             else
-            	echo "No size given."
-            	usage
-            	exit 1
+                usage_exit "No size given.";
             fi
 			shift
 		    ;;
@@ -83,9 +91,34 @@ while test $# -gt 0; do
             if test $# -gt 0; then
                 DENSITY=$1
             else
-            	echo "No density given."
-            	usage
-            	exit 1
+            	usage_exit "No density given."
+            fi
+			shift
+		    ;;
+		-lt|--logentries-token)
+		    shift
+            if test $# -gt 0; then
+                LOGENTRIES_TOKEN=$1
+            else
+            	usage_exit "No token given."
+            fi
+			shift
+		    ;;
+		-lu|--logentries-url)
+		    shift
+            if test $# -gt 0; then
+                LOGENTRIES_URL=$1
+            else
+            	usage_exit "No url given."
+            fi
+			shift
+		    ;;
+		-lp|--logentries-port)
+		    shift
+            if test $# -gt 0; then
+                LOGENTRIES_PORT=$1
+            else
+            	usage_exit "No port given."
             fi
 			shift
 		    ;;
@@ -104,6 +137,12 @@ if [[ "AAA${INPUT_FILE}AAA" == "AAAAAA" ]]; then
 	usage
 	exit 1
 fi
+
+function log() {
+    if [[ ! "AAA${LOGENTRIES_TOKEN}AAA" == "AAAAAA" ]]; then
+        echo "${LOGENTRIES_TOKEN} $@" | telnet $LOGENTRIES_URL $LOGENTRIES_PORT >/dev/null 2>&1
+    fi
+}
 
 
 # Test if profile is given
@@ -129,14 +168,16 @@ COMMAND="${COMMAND} ${REMAINING}"
 COMMAND="${COMMAND} ${OUTPUT_FILE}"
 
 # Execute
-${COMMAND}
-RC=$?
+${COMMAND} 2>&1 | tee output.txt
+CONVERSION_CODE=${PIPESTATUS[0]}
 
-if [ ${RC} -eq 0 ]
+if [ ${CONVERSION_CODE} -eq 0 ]
 then
   echo "Successfully converted image and saved to ${OUTPUT_FILE}"
+  log "INFO: Successfully converted ${INPUT_FILE}"
 else
   echo "Failed to convert image"
+  log "ERROR: Failed to convert $input_file (${CONVERSION_CODE}):" ${COMMAND} `cat output.txt`
 fi
 
-exit ${RC}
+exit ${CONVERSION_CODE}
