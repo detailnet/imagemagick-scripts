@@ -14,6 +14,7 @@ function usage() {
  	echo "-o, --output             Output file. Default \"- \"."
  	echo "-s, --size               Thumbnail size. Default \"200x200>\"." # http://www.imagemagick.org/script/command-line-processing.php#geometry
  	echo "-d, --density            Density. Default \"72\"."
+ 	echo "-q, --quality            JPEG quality. Default \"80\"."
  	echo "-lt, --logentries-token  Logentries token. If not given no logging performed."
  	echo "-lu, --logentries-url    Logentries url. Default \"data.logentries.com\"."
  	echo "-lp, --logentries-port   Logentries port. Default \"10000\"."
@@ -33,6 +34,7 @@ PROFILE_FILE="profile.icc"
 SRGB_PROFILE_FILE="sRGB.icm"
 SIZE="200x200>"
 DENSITY="72"
+QUALITY="80"
 OUTPUT_FILE="-"
 LOGENTRIES_URL="data.logentries.com"
 LOGENTRIES_PORT="10000"
@@ -92,6 +94,15 @@ while test $# -gt 0; do
                 DENSITY=$1
             else
             	usage_exit "No density given."
+            fi
+			shift
+		    ;;
+		-q|--quality)
+		    shift
+            if test $# -gt 0; then
+                QUALITY=$1
+            else
+            	usage_exit "No quality given."
             fi
 			shift
 		    ;;
@@ -164,6 +175,7 @@ fi
 COMMAND="${COMMAND} ${INPUT_FILE} -profile ${SRGB_PROFILE_FILE}"
 COMMAND="${COMMAND} -thumbnail ${SIZE}"
 COMMAND="${COMMAND} -density ${DENSITY}" #http://www.imagemagick.org/script/command-line-options.php#density
+COMMAND="${COMMAND} -quality ${QUALITY}"
 COMMAND="${COMMAND} ${REMAINING}"
 COMMAND="${COMMAND} ${OUTPUT_FILE}"
 
