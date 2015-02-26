@@ -1,7 +1,30 @@
 #!/bin/bash
 #set -x
 
+# Set defaults
+function set_defaults() {
+    PROFILE_FILE="profile.icc"
+    SRGB_PROFILE_FILE="sRGB.icm"
+    SIZE="200x200>"
+    PAGE="0"
+    DENSITY="72"
+    QUALITY="80"
+    BACKGROUND="white"
+    ALPHA="remove"
+    VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,EPDF,EPI,EPS,EPSF,EPSI,PCT,PDF,PDFA,PICT,PS"
+    INPUT_DENSITY="1200"
+    OUTPUT_FILE="-"
+    LOGENTRIES_URL="data.logentries.com"
+    LOGENTRIES_PORT="10000"
+    LOGENTRIES_TOKEN=""
+}
+
+set_defaults
+
 function usage() {
+    # Reset variables to default
+    set_defaults
+
 	echo ""
 	echo "$(basename $0) - Convert images"
 	echo ""
@@ -11,17 +34,25 @@ function usage() {
 	echo "-h, --help               Show brief help."
 	echo "-v, --verbose            Verbose output." # Is more a script debug mode
  	echo "-i, --input              Input file. Mandatory."
- 	echo "-o, --output             Output file. Default \"-\"."
- 	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"0\"."
- 	echo "-s, --size               Thumbnail size. Default \"200x200>\"."                     # http://www.imagemagick.org/script/command-line-processing.php#geometry
- 	echo "-d, --density            Density. Default \"72\"."                                  # http://www.imagemagick.org/script/command-line-options.php#density
- 	echo "-q, --quality            JPEG quality. Default \"80\"."
+ 	echo "-o, --output             Output file. Default \"${OUTPUT_FILE}\"."
+ 	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
+ 	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
+ 	echo "                         Default \"${VECTOR_FORMATS}\"."
+ 	echo "                         Note: to identify format of image use:"
+ 	echo "                         \`convert <image> -print \"%m\n\" null:\`."
+ 	echo "                         Listing recognised formats: \`identify -list format\`."
+ 	echo "-id, --input-density     Input density, used only for vector graphic images."
+ 	echo "                         Default \"${INPUT_DENSITY}\"."
+ 	echo "                         Note: high values cause high load and  performance issues."
+ 	echo "-s, --size               Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
+ 	echo "-d, --density            Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
+ 	echo "-q, --quality            JPEG quality. Default \"${QUALITY}\"."
  	echo "-b, --background         Set background of image, might not be shown (depends on alpha)."
- 	echo "                         Default \"white\"."
- 	echo "-a, --alpha              Modify alpha channel of an image. Default \"remove\"."      # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
+ 	echo "                         Default \"${BACKGROUND}\"."
+ 	echo "-a, --alpha              Modify alpha channel of an image. Default \"${ALPHA}\"."      # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
  	echo "-lt, --logentries-token  Logentries token. If not given no logging performed."
- 	echo "-lu, --logentries-url    Logentries url. Default \"data.logentries.com\"."
- 	echo "-lp, --logentries-port   Logentries port. Default \"10000\"."
+ 	echo "-lu, --logentries-url    Logentries url. Default \"${LOGENTRIES_URL}\"."
+ 	echo "-lp, --logentries-port   Logentries port. Default \"${LOGENTRIES_PORT}\"."
 	echo ""
 	echo "convert options: see 'convert --help'"
 	echo ""
@@ -33,28 +64,13 @@ function usage_exit() {
     exit 1
 }
 
-# Set defaults
-PROFILE_FILE="profile.icc"
-SRGB_PROFILE_FILE="sRGB.icm"
-SIZE="200x200>"
-PAGE="0"
-DENSITY="72"
-QUALITY="80"
-BACKGROUND="white"
-ALPHA="remove"
-OUTPUT_FILE="-"
-LOGENTRIES_URL="data.logentries.com"
-LOGENTRIES_PORT="10000"
-LOGENTRIES_TOKEN=""
-
 
 # Check ImageMagick convert
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
 #BC=$(type -P bc)  || { echo "Script requires the binary calculator 'bc' but it's not installed."; exit 1; }
 
 if [[ $# -eq 0 ]]; then
-	usage
-	exit 0
+	usage_exit "Mandatory params not set"
 fi
 
 # Get options
@@ -110,6 +126,24 @@ while test $# -gt 0; do
                 DENSITY=$1
             else
             	usage_exit "No density given."
+            fi
+			shift
+		    ;;
+		-id|--input-density)
+		    shift
+            if test $# -gt 0; then
+                INPUT_DENSITY=$1
+            else
+            	usage_exit "No input density given."
+            fi
+			shift
+		    ;;
+		-fv|--vector-formats)
+		    shift
+            if test $# -gt 0; then
+                VECTOR_FORMATS=$1
+            else
+            	usage_exit "No vector graphic formats given."
             fi
 			shift
 		    ;;
@@ -178,9 +212,7 @@ REMAINING=$@
 
 # Check that input file is set
 if [[ "AAA${INPUT_FILE}AAA" == "AAAAAA" ]]; then
-	echo "No input file defined. (mandatory)"
-	usage
-	exit 1
+	usage_exit "No input file defined. (mandatory)"
 fi
 
 function log() {
@@ -193,8 +225,17 @@ function log() {
 ${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
+# Test if is vector graphic
+FORMAT=`${CONVERT} "${INPUT_FILE}[${PAGE}]" -print "%m\n" null: 2>/dev/null`
+IS_VECTOR=`echo "${VECTOR_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
+
 # Build convert command, NOTE: order of commands is very important for convert
 COMMAND="${CONVERT}"
+
+if [ ! ${IS_VECTOR} -eq 0 ]; then
+    echo "Vector graphic image."
+    COMMAND="${COMMAND} -density ${INPUT_DENSITY}"
+fi
 
 if [ ${HAS_PROFILE} -eq 0 ]
 then
@@ -207,8 +248,8 @@ fi
 
 COMMAND="${COMMAND} ${INPUT_FILE}[${PAGE}] -profile ${SRGB_PROFILE_FILE}"
 COMMAND="${COMMAND} -background ${BACKGROUND} -alpha ${ALPHA}"
-COMMAND="${COMMAND} -density ${DENSITY}"
 COMMAND="${COMMAND} -thumbnail ${SIZE}"
+COMMAND="${COMMAND} -density ${DENSITY}"
 COMMAND="${COMMAND} -quality ${QUALITY}"
 COMMAND="${COMMAND} ${REMAINING}"
 COMMAND="${COMMAND} ${OUTPUT_FILE}"
