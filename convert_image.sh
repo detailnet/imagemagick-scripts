@@ -28,11 +28,11 @@ function usage() {
     set_defaults
 
 	echo ""
-	echo "$(basename $0) - Convert images"
+	echo "$(basename $0) - Convert image"
 	echo ""
 	echo "Usage: $(basename $0) -i input_file [options] [convert options]"
 	echo ""
-	echo "options:"
+	echo "Options:"
 	echo "-h, --help               Show brief help."
 	echo "-v, --verbose            Verbose output." # Is more a script debug mode
  	echo "-i, --input              Input file. Mandatory."
@@ -46,7 +46,7 @@ function usage() {
  	echo "                         Listing recognised formats: \`identify -list format\`."
  	echo "-id, --input-density     Input density, used only for vector graphic images."
  	echo "                         Default \"${INPUT_DENSITY}\"."
- 	echo "                         Note: high values cause high load and  performance issues."
+ 	echo "                         Note: high values cause high load and performance issues."
  	echo "-s, --size               Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
  	echo "-d, --density            Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
  	echo "-q, --quality            JPEG quality. Default \"${QUALITY}\"."
