@@ -3,7 +3,6 @@
 
 # Set defaults
 function set_defaults() {
-    PROFILE_FILE="profile.icc"
     SRGB_PROFILE_FILE="sRGB.icm"
     SIZE="200x200>"
     PAGE="0"
@@ -18,6 +17,9 @@ function set_defaults() {
     LOGENTRIES_PORT="10000"
     LOGENTRIES_TOKEN=""
 }
+
+PROFILE_FILE="profile.icc"
+OUTPUT_TEXT="output.txt"
 
 set_defaults
 
@@ -221,6 +223,8 @@ function log() {
     fi
 }
 
+### END CONFIGURATION, BEGIN WORK ###
+
 # Test if profile is given
 ${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
@@ -255,7 +259,7 @@ COMMAND="${COMMAND} ${REMAINING}"
 COMMAND="${COMMAND} ${OUTPUT_FILE}"
 
 # Execute
-${COMMAND} 2>&1 | tee output.txt
+${COMMAND} 2>&1 | tee ${OUTPUT_TEXT}
 CONVERSION_CODE=${PIPESTATUS[0]}
 
 if [ ${CONVERSION_CODE} -eq 0 ]
@@ -264,7 +268,10 @@ then
   log "INFO: Successfully converted ${INPUT_FILE}"
 else
   echo "Failed to convert image"
-  log "ERROR: Failed to convert $input_file (${CONVERSION_CODE}):" ${COMMAND} `cat output.txt`
+  log "ERROR: Failed to convert $input_file (exit code: ${CONVERSION_CODE}):" ${COMMAND} `cat ${OUTPUT_TEXT}`
 fi
+
+# Cleanup
+rm -f ${PROFILE_FILE} ${OUTPUT_TEXT} 2>&1 >/dev/null
 
 exit ${CONVERSION_CODE}
