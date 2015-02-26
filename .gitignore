@@ -1,0 +1,10 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!*.sh
+!LICENSE
+!README.md
+!profiles
+!*/*
