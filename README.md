@@ -11,13 +11,16 @@ Options:
 -h, --help               Show brief help.
 -v, --verbose            Verbose output.
 -i, --input              Input file. Mandatory.
--o, --output             Output file. Mandatory. Set "-" to send directly to standard output.
+-o, --output             Output file. Mandatory. Set "-" to send directly to standard
+                         output.
 -t, --target-profile     Color profile file to apply. Default "./profiles/sRGB.icm".
 -p, --page, --layer      Select input page or layer (PDF or PSD). Default "0".
--fp, --ps-formats        Formats to be interpreted as postscript graphic. comma separated list.
+-fp, --ps-formats        Formats to be interpreted as postscript graphic. comma separated
+                         list.
                          Those will be checked (with ps2pdf) if are pure vector graphic.
                          Default "EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS".
--fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list.
+-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated
+                         list.
                          Default "MSVG,SVG,SVGZ,AI,PCT,PICT".
 -s, --size               Thumbnail size. Default "200x200>".
 -d, --density            Density. Default "72".
@@ -33,11 +36,11 @@ convert options: see 'convert --help'
 ```
 
 Notes:
-- Listing of recognised formats can be gat trough ```identify -list format```
-- Format of file image can be discovered troug ```convert <image> -print "%m\n" null:```
+- Listing of recognised formats can be get trough ```identify -list format```
+- Format of file image can be discovered trough ```convert <image> -print "%m\n" null:```
 - Size input format is defined by an imagemagick [geomety](http://www.imagemagick.org/script/command-line-processing.php#geometry)
 - Density input format is defined by an imagemagick [density](http://www.imagemagick.org/script/command-line-options.php#density)
-- Alpha channel manupulation, trough alpha and bachkground params, is defined by imagemagick [alpha](http://www.imagemagick.org/script/command-line-options.php#alpha); here some [examples](http://www.imagemagick.org/Usage/masking#alpha_channel)
+- Alpha channel manipulation, trough alpha and background params, is defined by imagemagick [alpha](http://www.imagemagick.org/script/command-line-options.php#alpha); here some [examples](http://www.imagemagick.org/Usage/masking#alpha_channel)
 
 Requirements:
 - [Bourne Again SHell](http://www.gnu.org/software/bash/)
