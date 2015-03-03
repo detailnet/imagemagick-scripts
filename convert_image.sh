@@ -10,7 +10,8 @@ function set_defaults() {
     QUALITY="80"
     BACKGROUND="white"
     ALPHA="remove"
-    VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,EPDF,EPI,EPS,EPSF,EPSI,PCT,PDF,PDFA,PICT,PS"
+    POSTSCRIPT_FORMATS="EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS"
+    VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,PCT,PICT"
     INPUT_DENSITY="1200"
     OUTPUT_FILE="-"
     LOGENTRIES_URL="data.logentries.com"
@@ -39,6 +40,9 @@ function usage() {
  	echo "-o, --output             Output file. Default \"${OUTPUT_FILE}\"."
  	echo "-t, --target-profile     Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
  	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
+ 	echo "-fp, --ps-formats        Formats to be interpreted as postscript graphic. comma separated list."
+ 	echo "                         Those will be checked (with ps2pdf) if are pure vector graphic."
+ 	echo "                         Default \"${POSTSCRIPT_FORMATS}\"."
  	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
  	echo "                         Default \"${VECTOR_FORMATS}\"."
  	echo "                         Note: to identify format of image use:"
@@ -71,6 +75,7 @@ function usage_exit() {
 # Check ImageMagick convert
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
 #BC=$(type -P bc)  || { echo "Script requires the binary calculator 'bc' but it's not installed."; exit 1; }
+PS2PDF=$(type -P ps2pdf)  || { echo "Script requires GhostScript ps2pdf but it's not installed."; exit 1; }
 
 if [[ $# -eq 0 ]]; then
 	usage_exit "Mandatory params not set"
@@ -147,6 +152,15 @@ while test $# -gt 0; do
                 INPUT_DENSITY=$1
             else
             	usage_exit "No input density given."
+            fi
+			shift
+		    ;;
+		-fp|--ps-formats)
+		    shift
+            if test $# -gt 0; then
+                POSTSCRIPT_FORMATS=$1
+            else
+            	usage_exit "No postscript graphic formats given."
             fi
 			shift
 		    ;;
@@ -239,15 +253,28 @@ function log() {
 ${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
-# Test if is vector graphic
+# Test if is postscript or vector graphic
 FORMAT=`${CONVERT} "${INPUT_FILE}[${PAGE}]" -print "%m\n" null: 2>/dev/null`
+IS_POSTSCRIPT=`echo "${POSTSCRIPT_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
 IS_VECTOR=`echo "${VECTOR_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
+
+if [ ! ${IS_POSTSCRIPT} -eq 0 ]; then
+    echo "Postscript image"
+
+    # Following line could be used for debug mode
+    # ${PS2PDF} "${INPUT_FILE}"  -  2>/dev/null | grep -a --color -i -e "/image\( \|$\)"
+
+    # Test if pure vector postscript image
+    if [ `${PS2PDF}  "${INPUT_FILE}"  -  2>/dev/null | grep -c -i -e "/image\( \|$\)"` -eq 0 ]; then
+        IS_VECTOR=1
+    fi
+fi
 
 # Build convert command, NOTE: order of commands is very important for convert
 COMMAND="${CONVERT}"
 
 if [ ! ${IS_VECTOR} -eq 0 ]; then
-    echo "Vector graphic image."
+    echo "Vector graphic image"
     COMMAND="${COMMAND} -density ${INPUT_DENSITY}"
 fi
 
