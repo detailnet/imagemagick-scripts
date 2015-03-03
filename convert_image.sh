@@ -12,7 +12,6 @@ function set_defaults() {
     ALPHA="remove"
     POSTSCRIPT_FORMATS="EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS"
     VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,PCT,PICT"
-    INPUT_DENSITY="1200"
     OUTPUT_FILE="-"
     LOGENTRIES_URL="data.logentries.com"
     LOGENTRIES_PORT="10000"
@@ -48,9 +47,6 @@ function usage() {
  	echo "                         Note: to identify format of image use:"
  	echo "                         \`convert <image> -print \"%m\n\" null:\`."
  	echo "                         Listing recognised formats: \`identify -list format\`."
- 	echo "-id, --input-density     Input density, used only for vector graphic images."
- 	echo "                         Default \"${INPUT_DENSITY}\"."
- 	echo "                         Note: high values cause high load and performance issues."
  	echo "-s, --size               Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
  	echo "-d, --density            Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
  	echo "-q, --quality            JPEG quality. Default \"${QUALITY}\"."
@@ -143,15 +139,6 @@ while test $# -gt 0; do
                 DENSITY=$1
             else
             	usage_exit "No density given."
-            fi
-			shift
-		    ;;
-		-id|--input-density)
-		    shift
-            if test $# -gt 0; then
-                INPUT_DENSITY=$1
-            else
-            	usage_exit "No input density given."
             fi
 			shift
 		    ;;
@@ -254,7 +241,8 @@ ${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
 # Test if is postscript or vector graphic
-FORMAT=`${CONVERT} "${INPUT_FILE}[${PAGE}]" -print "%m\n" null: 2>/dev/null`
+INFO=`${CONVERT} "${INPUT_FILE}[${PAGE}]" -print "%m %w %h %[resolution.x] %[resolution.y]\n" null: 2>/dev/null`
+FORMAT=`echo ${INFO} | cut -d' ' -f1`
 IS_POSTSCRIPT=`echo "${POSTSCRIPT_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
 IS_VECTOR=`echo "${VECTOR_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
 
@@ -274,7 +262,26 @@ fi
 COMMAND="${CONVERT}"
 
 if [ ! ${IS_VECTOR} -eq 0 ]; then
-    echo "Vector graphic image"
+    DEST_SIZE_X=`expr match "${SIZE}" '\([0-9]\+\).*$'`         # OR ${SIZE%x*}
+    DEST_SIZE_Y=`expr match "${SIZE}" '[0-9]\+x\?\([0-9]\+\).*$'`
+    if [ ${DEST_SIZE_X} -gt ${DEST_SIZE_Y} ]; then
+        DEST_MAX=${DEST_SIZE_X}
+    else
+        DEST_MAX=${DEST_SIZE_Y}
+    fi
+
+    SRC_SIZE_X=`echo ${INFO} | cut -d' ' -f2`
+    SRC_SIZE_Y=`echo ${INFO} | cut -d' ' -f3`
+    if [ ${SRC_SIZE_X} -gt ${SRC_SIZE_Y} ]; then
+        SRC_MAX=${SRC_SIZE_X}
+    else
+        SRC_MAX=${SRC_SIZE_Y}
+    fi
+
+    INPUT_DENSITY=`expr \( ${DEST_MAX} / \( ${SRC_MAX} / ${DENSITY} \) \) + 5`
+
+    echo "Vector graphic image, input density ${INPUT_DENSITY}"
+
     COMMAND="${COMMAND} -density ${INPUT_DENSITY}"
 fi
 
