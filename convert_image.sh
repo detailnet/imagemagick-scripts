@@ -12,7 +12,6 @@ function set_defaults() {
     ALPHA="remove"
     POSTSCRIPT_FORMATS="EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS"
     VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,PCT,PICT"
-    OUTPUT_FILE="-"
     LOGENTRIES_URL="data.logentries.com"
     LOGENTRIES_PORT="10000"
     LOGENTRIES_TOKEN=""
@@ -30,13 +29,13 @@ function usage() {
 	echo ""
 	echo "$(basename $0) - Convert image"
 	echo ""
-	echo "Usage: $(basename $0) -i input_file [options] [convert options]"
+	echo "Usage: $(basename $0) -i input_file -o output_file [options] [convert options]"
 	echo ""
 	echo "Options:"
 	echo "-h, --help               Show brief help."
 	echo "-v, --verbose            Verbose output." # Is more a script debug mode
  	echo "-i, --input              Input file. Mandatory."
- 	echo "-o, --output             Output file. Default \"${OUTPUT_FILE}\"."
+ 	echo "-o, --output             Output file. Mandatory. Set \"-\" to send directly to standard output."
  	echo "-t, --target-profile     Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
  	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
  	echo "-fp, --ps-formats        Formats to be interpreted as postscript graphic. comma separated list."
@@ -222,10 +221,14 @@ done
 
 REMAINING=$@
 
-
 # Check that input file is set
 if [[ "AAA${INPUT_FILE}AAA" == "AAAAAA" ]]; then
 	usage_exit "No input file defined. (mandatory)"
+fi
+
+# Check that output file is set
+if [[ "AAA${OUTPUT_FILE}AAA" == "AAAAAA" ]]; then
+	usage_exit "No output file defined. (mandatory)"
 fi
 
 function log() {
