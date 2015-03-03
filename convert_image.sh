@@ -43,9 +43,6 @@ function usage() {
  	echo "                         Default \"${POSTSCRIPT_FORMATS}\"."
  	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
  	echo "                         Default \"${VECTOR_FORMATS}\"."
- 	echo "                         Note: to identify format of image use:"
- 	echo "                         \`convert <image> -print \"%m\n\" null:\`."
- 	echo "                         Listing recognised formats: \`identify -list format\`."
  	echo "-s, --size               Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
  	echo "-d, --density            Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
  	echo "-q, --quality            JPEG quality. Default \"${QUALITY}\"."
@@ -69,7 +66,7 @@ function usage_exit() {
 
 # Check ImageMagick convert
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
-#BC=$(type -P bc)  || { echo "Script requires the binary calculator 'bc' but it's not installed."; exit 1; }
+BC=$(type -P bc)  || { echo "Script requires the binary calculator 'bc' but it's not installed."; exit 1; }
 PS2PDF=$(type -P ps2pdf)  || { echo "Script requires GhostScript ps2pdf but it's not installed."; exit 1; }
 
 if [[ $# -eq 0 ]]; then
@@ -265,23 +262,24 @@ fi
 COMMAND="${CONVERT}"
 
 if [ ! ${IS_VECTOR} -eq 0 ]; then
-    DEST_SIZE_X=`expr match "${SIZE}" '\([0-9]\+\).*$'`         # OR ${SIZE%x*}
-    DEST_SIZE_Y=`expr match "${SIZE}" '[0-9]\+x\?\([0-9]\+\).*$'`
-    if [ ${DEST_SIZE_X} -gt ${DEST_SIZE_Y} ]; then
-        DEST_MAX=${DEST_SIZE_X}
-    else
-        DEST_MAX=${DEST_SIZE_Y}
-    fi
+    function max() {
+         if [ $1 -gt $2 ]; then echo $1; else echo $2; fi
+    }
+
+    DEST_SIZE_X=`expr match "${SIZE}" '\([0-9]\+\).*$'`           # OR ${SIZE%x*}
+    DEST_SIZE_Y=`expr match "${SIZE}" '[0-9]\+x\?\([0-9]\+\).*$'` # @todo: refactor eg "72" returns "2" .. ok for now, because we need the max only
+    DEST_MAX=$(max ${DEST_SIZE_X} ${DEST_SIZE_Y})
 
     SRC_SIZE_X=`echo ${INFO} | cut -d' ' -f2`
     SRC_SIZE_Y=`echo ${INFO} | cut -d' ' -f3`
-    if [ ${SRC_SIZE_X} -gt ${SRC_SIZE_Y} ]; then
-        SRC_MAX=${SRC_SIZE_X}
-    else
-        SRC_MAX=${SRC_SIZE_Y}
-    fi
+    SRC_MAX=$(max ${DEST_SIZE_X} ${DEST_SIZE_Y})
 
-    INPUT_DENSITY=`expr \( ${DEST_MAX} / \( ${SRC_MAX} / ${DENSITY} \) \) + 5`
+    DENSITY_X=`expr match "${DENSITY}" '\([0-9]\+\).*$'`
+    DENSITY_Y=`expr match "${DENSITY}" '[0-9]\+x\?\([0-9]\+\).*$'` # @todo: same as before
+    DENSITY_MAX=$(max ${DENSITY_X} ${DENSITY_Y})
+
+    #INPUT_DENSITY=`expr \( ${DEST_MAX} / \( ${SRC_MAX} / ${DENSITY_MAX} \) \) + 5`
+    INPUT_DENSITY=`echo "scale=4;(${DEST_MAX} / (${SRC_MAX} / ${DENSITY_MAX})) + 5; scale=0; last/1" | ${BC} -q | tail -1`
 
     echo "Vector graphic image, input density ${INPUT_DENSITY}"
 
