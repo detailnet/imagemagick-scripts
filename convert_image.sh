@@ -68,6 +68,7 @@ function usage_exit() {
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
 BC=$(type -P bc)  || { echo "Script requires the binary calculator 'bc' but it's not installed."; exit 1; }
 PS2PDF=$(type -P ps2pdf)  || { echo "Script requires GhostScript ps2pdf but it's not installed."; exit 1; }
+WGET=$(type -P wget)  || { echo "Script requires GNU wget, but it's not installed."; exit 1; }
 
 if [[ $# -eq 0 ]]; then
 	usage_exit "Mandatory params not set"
@@ -221,6 +222,14 @@ REMAINING=$@
 # Check that input file is set
 if [[ "AAA${INPUT_FILE}AAA" == "AAAAAA" ]]; then
 	usage_exit "No input file defined. (mandatory)"
+fi
+
+# Check if URL input, convert supports it natively but would download every time is called. Download here.
+URL_REGEX='(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]'
+if [[ ${INPUT_FILE} =~ ${URL_REGEX} ]]; then
+    URL=${INPUT_FILE}
+    INPUT_FILE=$(basename $(echo ${URL} | cut -d@ -f2 | cut -d/ -f2- | cut -d? -f1))
+    ${WGET} -q -O ${INPUT_FILE} ${URL}
 fi
 
 # Check that output file is set
