@@ -19,6 +19,7 @@ function set_defaults() {
 
 PROFILE_FILE="profile.icc"
 OUTPUT_TEXT="output.txt"
+CLEANUP_FILES="${PROFILE_FILE} ${OUTPUT_TEXT}"
 
 set_defaults
 
@@ -231,6 +232,21 @@ if [[ ${INPUT_FILE} =~ ${URL_REGEX} ]]; then
     ${WGET} -q -O ${INPUT_FILE} ${URL}
 fi
 
+# Sanitize input file (remove special chars, convert spaces to underscore")
+INVALID_REGEX='[ :?"\\]'
+if [[ ${INPUT_FILE} =~ ${INVALID_REGEX} ]]; then
+    SANITIZED_INPUT=${INPUT_FILE//[:?\']}
+    SANITIZED_INPUT=${SANITIZED_INPUT// /_}
+
+    # @todo: Should check that does not already exists
+
+    # Create symbolic link so that there is no need to copy or move data
+    ln -f -s "${INPUT_FILE}" $SANITIZED_INPUT
+
+    INPUT_FILE=$SANITIZED_INPUT
+    CLEANUP_FILES+=" $SANITIZED_INPUT"
+fi
+
 # Check that output file is set
 if [[ "AAA${OUTPUT_FILE}AAA" == "AAAAAA" ]]; then
 	usage_exit "No output file defined. (mandatory)"
@@ -244,12 +260,18 @@ function log() {
 
 ### END CONFIGURATION, BEGIN WORK ###
 
+# Check that input file is present
+if [[ ! -r ${INPUT_FILE} ]]; then
+    echo "Input file \"${INPUT_FILE}\" not readable."
+    log "ERROR: Input file \"${INPUT_FILE}\" not readable."
+fi
+
 # Test if profile is given
-${CONVERT} "${INPUT_FILE}[${PAGE}]" "${PROFILE_FILE}" 2>/dev/null
+${CONVERT} ${INPUT_FILE}[${PAGE}] "${PROFILE_FILE}" 2>/dev/null
 HAS_PROFILE=$?
 
 # Test if is postscript or vector graphic
-INFO=`${CONVERT} "${INPUT_FILE}[${PAGE}]" -print "%m %w %h %[resolution.x] %[resolution.y]\n" null: 2>/dev/null`
+INFO=`${CONVERT} ${INPUT_FILE}[${PAGE}] -print "%m %w %h %[resolution.x] %[resolution.y]\n" null: 2>/dev/null`
 FORMAT=`echo ${INFO} | cut -d' ' -f1`
 IS_POSTSCRIPT=`echo "${POSTSCRIPT_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
 IS_VECTOR=`echo "${VECTOR_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
@@ -258,10 +280,10 @@ if [ ! ${IS_POSTSCRIPT} -eq 0 ]; then
     echo "Postscript image"
 
     # Following line could be used for debug mode
-    # ${PS2PDF} "${INPUT_FILE}"  -  2>/dev/null | grep -a --color -i -e "/image\( \|$\)"
+    # ${PS2PDF} ${INPUT_FILE} - 2>/dev/null | grep -a --color -i -e "/image\( \|$\)"
 
     # Test if pure vector postscript image
-    if [ `${PS2PDF}  "${INPUT_FILE}"  -  2>/dev/null | grep -c -i -e "/image\( \|$\)"` -eq 0 ]; then
+    if [ `${PS2PDF} ${INPUT_FILE} - 2>/dev/null | grep -c -i -e "/image\( \|$\)"` -eq 0 ]; then
         IS_VECTOR=1
     fi
 fi
@@ -303,13 +325,14 @@ else
   echo "No color profile found"
 fi
 
-COMMAND="${COMMAND} ${INPUT_FILE}[${PAGE}] -profile ${TARGET_PROFILE_FILE}"
-COMMAND="${COMMAND} -background ${BACKGROUND} -alpha ${ALPHA}"
-COMMAND="${COMMAND} -thumbnail ${SIZE}"
-COMMAND="${COMMAND} -density ${DENSITY}"
-COMMAND="${COMMAND} -quality ${QUALITY}"
-COMMAND="${COMMAND} ${REMAINING}"
-COMMAND="${COMMAND} ${OUTPUT_FILE}"
+COMMAND+=" ${INPUT_FILE}[${PAGE}]"
+COMMAND+=" -profile ${TARGET_PROFILE_FILE}"
+COMMAND+=" -background ${BACKGROUND} -alpha ${ALPHA}"
+COMMAND+=" -thumbnail ${SIZE}"
+COMMAND+=" -density ${DENSITY}"
+COMMAND+=" -quality ${QUALITY}"
+COMMAND+=" ${REMAINING}"
+COMMAND+=" ${OUTPUT_FILE}"
 
 # Execute
 ${COMMAND} 2>&1 | tee ${OUTPUT_TEXT}
@@ -321,10 +344,10 @@ then
   log "INFO: Successfully converted ${INPUT_FILE}"
 else
   echo "Failed to convert image"
-  log "ERROR: Failed to convert $input_file (exit code: ${CONVERSION_CODE}):" ${COMMAND} `cat ${OUTPUT_TEXT}`
+  log "ERROR: Failed to convert ${INPUT_FILE} (exit code: ${CONVERSION_CODE}):" ${COMMAND} `cat ${OUTPUT_TEXT}`
 fi
 
 # Cleanup
-rm -f ${PROFILE_FILE} ${OUTPUT_TEXT} 2>&1 >/dev/null
+rm -f ${CLEANUP_FILES} 2>&1 >/dev/null
 
 exit ${CONVERSION_CODE}
