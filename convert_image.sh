@@ -288,7 +288,7 @@ if [ ! ${IS_POSTSCRIPT} -eq 0 ]; then
     fi
 fi
 
-# Build convert command, NOTE: order of commands is very important for convert
+# Build convert command, NOTE: order of commands is very important for ImageMagick convert
 COMMAND="${CONVERT}"
 
 if [ ! ${IS_VECTOR} -eq 0 ]; then
@@ -313,14 +313,14 @@ if [ ! ${IS_VECTOR} -eq 0 ]; then
 
     echo "Vector graphic image, input density ${INPUT_DENSITY}"
 
-    COMMAND="${COMMAND} -density ${INPUT_DENSITY}"
+    COMMAND+=" -density ${INPUT_DENSITY}"
 fi
 
 if [ ${HAS_PROFILE} -eq 0 ]
 then
   echo "Color profile found"
 
-  COMMAND="${COMMAND} -profile ${PROFILE_FILE}"
+  COMMAND+=" -profile ${PROFILE_FILE}"
 else
   echo "No color profile found"
 fi
