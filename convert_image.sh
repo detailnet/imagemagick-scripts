@@ -34,7 +34,7 @@ function usage() {
 	echo "Options:"
 	echo "-h, --help               Show brief help."
 	echo "-v, --verbose            Verbose output." # Is more a script debug mode
- 	echo "-i, --input              Input file. Mandatory."
+ 	echo "-i, --input              Input file or URI. Mandatory."
  	echo "-o, --output             Output file. Mandatory. Set \"-\" to send directly to standard output."
  	echo "-t, --target-profile     Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
  	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
