@@ -10,7 +10,7 @@ Usage: convert_image.sh -i input_file -o output_file [options] [convert options]
 Options:
 -h, --help               Show brief help.
 -v, --verbose            Verbose output.
--i, --input              Input file. Mandatory.
+-i, --input              Input file or URI. Mandatory.
 -o, --output             Output file. Mandatory. Set "-" to send directly to standard
                          output.
 -t, --target-profile     Color profile file to apply. Default "./profiles/sRGB.icm".
@@ -38,13 +38,13 @@ convert options: see 'convert --help'
 Notes:
 - Listing of recognised formats can be get trough ```identify -list format```
 - Format of file image can be discovered trough ```convert <image> -print "%m\n" null:```
-- Size input format is defined by an imagemagick [geomety](http://www.imagemagick.org/script/command-line-processing.php#geometry)
-- Density input format is defined by an imagemagick [density](http://www.imagemagick.org/script/command-line-options.php#density)
-- Alpha channel manipulation, trough alpha and background params, is defined by imagemagick [alpha](http://www.imagemagick.org/script/command-line-options.php#alpha); here some [examples](http://www.imagemagick.org/Usage/masking#alpha_channel)
+- Size input format is defined by an ImageMagick [geometry](http://www.imagemagick.org/script/command-line-processing.php#geometry)
+- Density input format is defined by an ImageMagick [density](http://www.imagemagick.org/script/command-line-options.php#density)
+- Alpha channel manipulation, trough alpha and background params, is defined by ImageMagick [alpha](http://www.imagemagick.org/script/command-line-options.php#alpha); here some [examples](http://www.imagemagick.org/Usage/masking#alpha_channel)
 
 Requirements:
 - [Bourne Again SHell](http://www.gnu.org/software/bash/)
-- [Imagemagick's convert](http://www.imagemagick.org/script/convert.php)
-- [Ghostscript ps2pdf](http://www.ghostscript.com/doc/9.14/Ps2pdf.htm) Usually packaged with imagemagick distribution.
+- [ImageMagick's convert](http://www.imagemagick.org/script/convert.php)
+- [Ghostscript ps2pdf](http://www.ghostscript.com/doc/9.14/Ps2pdf.htm) Usually packaged with ImageMagick distribution.
 - [wget](http://www.gnu.org/software/wget/)
-- `telent` - required to log processing to [Logentries](https://logentries.com/)
+- `telenet` - required to log processing to [Logentries](https://logentries.com/)
