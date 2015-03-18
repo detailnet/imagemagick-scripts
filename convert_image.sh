@@ -66,7 +66,6 @@ function usage_exit() {
 
 # Check ImageMagick convert
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
-BC=$(type -P bc)  || { echo "Script requires the binary calculator 'bc' but it's not installed."; exit 1; }
 PS2PDF=$(type -P ps2pdf)  || { echo "Script requires GhostScript ps2pdf but it's not installed."; exit 1; }
 WGET=$(type -P wget)  || { echo "Script requires GNU wget, but it's not installed."; exit 1; }
 
@@ -287,8 +286,8 @@ if [ ! ${IS_VECTOR} -eq 0 ]; then
     DENSITY_Y=`expr match "${DENSITY}" '[0-9]\+x\?\([0-9]\+\).*$'` # @todo: same as before
     DENSITY_MAX=$(max ${DENSITY_X} ${DENSITY_Y})
 
-    #INPUT_DENSITY=`expr \( ${DEST_MAX} / \( ${SRC_MAX} / ${DENSITY_MAX} \) \) + 5`
-    INPUT_DENSITY=`echo "scale=4;(${DEST_MAX} / (${SRC_MAX} / ${DENSITY_MAX})) + 5; scale=0; last/1" | ${BC} -q | tail -1`
+    PRECISION_MULTIPLIER=1000
+    INPUT_DENSITY=`expr \( \( ${DEST_MAX} \* ${PRECISION_MULTIPLIER} \) / \( \( ${SRC_MAX} \* ${PRECISION_MULTIPLIER} \) / ${DENSITY_MAX} \) \) + 5`
 
     echo "Vector graphic image, input density ${INPUT_DENSITY}"
 

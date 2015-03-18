@@ -46,6 +46,5 @@ Requirements:
 - [Bourne Again SHell](http://www.gnu.org/software/bash/)
 - [Imagemagick's convert](http://www.imagemagick.org/script/convert.php)
 - [Ghostscript ps2pdf](http://www.ghostscript.com/doc/9.14/Ps2pdf.htm) Usually packaged with imagemagick distribution.
-- [bc](http://www.gnu.org/software/bc/)
 - [wget](http://www.gnu.org/software/wget/)
 - `telent` - required to log processing to [Logentries](https://logentries.com/)
