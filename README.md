@@ -47,4 +47,4 @@ Requirements:
 - [ImageMagick's convert](http://www.imagemagick.org/script/convert.php)
 - [Ghostscript ps2pdf](http://www.ghostscript.com/doc/9.14/Ps2pdf.htm) Usually packaged with ImageMagick distribution.
 - [wget](http://www.gnu.org/software/wget/)
-- `telenet` - required to log processing to [Logentries](https://logentries.com/)
+- `telnet` - required to log processing to [Logentries](https://logentries.com/)
