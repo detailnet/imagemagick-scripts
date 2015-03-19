@@ -12,6 +12,7 @@ function set_defaults() {
     ALPHA="remove"
     POSTSCRIPT_FORMATS="EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS"
     VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,PCT,PICT"
+    GENERIC_CMYK_PROFILE="./profiles/Apple_Generic_CMYK_Profile.icc"
     LOGENTRIES_URL="data.logentries.com"
     LOGENTRIES_PORT="10000"
     LOGENTRIES_TOKEN=""
@@ -38,8 +39,10 @@ function usage() {
  	echo "-i, --input              Input file or URI. Mandatory."
  	echo "-o, --output             Output file. Mandatory. Set \"-\" to send directly to standard output."
  	echo "-t, --target-profile     Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
+ 	echo "-gp, --generic-cmyk      Generic profile to use when a CMYK image without profile is given."
+ 	echo "                         Default \"${GENERIC_CMYK_PROFILE}\"."
  	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
- 	echo "-fp, --ps-formats        Formats to be interpreted as postscript graphic. comma separated list."
+ 	echo "-fp, --ps-formats        Formats to be interpreted as postscript graphic. Comma separated list."
  	echo "                         Those will be checked (with ps2pdf) if are pure vector graphic."
  	echo "                         Default \"${POSTSCRIPT_FORMATS}\"."
  	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
@@ -100,7 +103,7 @@ while test $# -gt 0; do
                 OUTPUT_FILE=$1
             else
                 usage_exit "No output file given."
-             fi
+            fi
 			shift
 			;;
 		-t|--target-profile)
@@ -109,9 +112,18 @@ while test $# -gt 0; do
                 TARGET_PROFILE_FILE=$1
             else
                 usage_exit "No profile file given."
-             fi
+            fi
 			shift
 			;;
+		-gp|--generic-cmyk)
+		    shift
+            if test $# -gt 0; then
+                GENERIC_CMYK_PROFILE=$1
+            else
+                usage_exit "No generic cmyk profile file given."
+            fi
+            shift
+            ;;
 		-s|--size)
 		    shift
             if test $# -gt 0; then
@@ -269,11 +281,12 @@ fi
 
 # Test if profile is given
 ${CONVERT} ${INPUT_FILE}[${PAGE}] "${PROFILE_FILE}" 2>/dev/null
-HAS_PROFILE=$?
+HAS_NO_PROFILE=$?
 
 # Test if is postscript or vector graphic
-INFO=`${CONVERT} ${INPUT_FILE}[${PAGE}] -print "%m %w %h %[resolution.x] %[resolution.y]\n" null: 2>/dev/null`
+INFO=`${CONVERT} ${INPUT_FILE}[${PAGE}] -print "%m %[colorspace] %w %h %[resolution.x] %[resolution.y]\n" null: 2>/dev/null`
 FORMAT=`echo ${INFO} | cut -d' ' -f1`
+COLOR_SPACE=`echo ${INFO} | cut -d' ' -f2`
 IS_POSTSCRIPT=`echo "${POSTSCRIPT_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
 IS_VECTOR=`echo "${VECTOR_FORMATS}" | grep -c -i -e "\(^\|,\)${FORMAT}\(,\|$\)"`
 
@@ -301,8 +314,8 @@ if [ ! ${IS_VECTOR} -eq 0 ]; then
     DEST_SIZE_Y=`expr match "${SIZE}" '[0-9]\+x\?\([0-9]\+\).*$'` # @todo: refactor eg "72" returns "2" .. ok for now, because we need the max only
     DEST_MAX=$(max ${DEST_SIZE_X} ${DEST_SIZE_Y})
 
-    SRC_SIZE_X=`echo ${INFO} | cut -d' ' -f2`
-    SRC_SIZE_Y=`echo ${INFO} | cut -d' ' -f3`
+    SRC_SIZE_X=`echo ${INFO} | cut -d' ' -f3`
+    SRC_SIZE_Y=`echo ${INFO} | cut -d' ' -f4`
     SRC_MAX=$(max ${DEST_SIZE_X} ${DEST_SIZE_Y})
 
     DENSITY_X=`expr match "${DENSITY}" '\([0-9]\+\).*$'`
@@ -317,13 +330,20 @@ if [ ! ${IS_VECTOR} -eq 0 ]; then
     COMMAND+=" -density ${INPUT_DENSITY}"
 fi
 
-if [ ${HAS_PROFILE} -eq 0 ]
+if [ ${HAS_NO_PROFILE} -eq 0 ]
 then
   echo "Color profile found"
 
   COMMAND+=" -profile ${PROFILE_FILE}"
 else
-  echo "No color profile found"
+  if [ ${COLOR_SPACE} == "CMYK" ]
+  then
+    echo "No color profile found, applying generic CMYK profile"
+
+    COMMAND+=" -profile ${GENERIC_CMYK_PROFILE}"
+  else
+    echo "No color profile found"
+  fi
 fi
 
 COMMAND+=" ${INPUT_FILE}[${PAGE}]"
@@ -345,7 +365,7 @@ then
   log "INFO: Successfully converted ${INPUT_FILE}"
 else
   echo "Failed to convert image"
-  log "ERROR: Failed to convert ${INPUT_FILE} (exit code: ${CONVERSION_CODE}):" ${COMMAND} `cat ${OUTPUT_TEXT}`
+  log "ERROR: Failed to convert \"${INPUT_FILE}\"; Info: ${INFO}; exit code: ${CONVERSION_CODE}; command and output:" ${COMMAND} `cat ${OUTPUT_TEXT}`
 fi
 
 # Cleanup
