@@ -38,8 +38,8 @@ function usage() {
 	echo "-v, --verbose               Verbose output." # Is more a script debug mode
  	echo "-i, --input                 Input file or URI. Mandatory."
  	echo "-o, --output                Output file. Mandatory. Set \"-\" to send directly to standard output."
- 	echo "-t, --target-profile        Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
- 	echo "-spc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is given."
+ 	echo "-pt, --target-profile       Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
+ 	echo "-psc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is given."
  	echo "                            Default \"${SOURCE_PROFILE_CMYK}\"."
  	echo "-p, --page, --layer         Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
  	echo "-fp, --ps-formats           Formats to be interpreted as postscript graphic. Comma separated list."
@@ -106,7 +106,7 @@ while test $# -gt 0; do
             fi
 			shift
 			;;
-		-t|--target-profile)
+		-pt|--target-profile)
             shift
             if test $# -gt 0; then
                 TARGET_PROFILE_FILE=$1
@@ -115,7 +115,7 @@ while test $# -gt 0; do
             fi
 			shift
 			;;
-		-spc|--source-profile-cmyk)
+		-psc|--source-profile-cmyk)
 		    shift
             if test $# -gt 0; then
                 SOURCE_PROFILE_CMYK=$1
