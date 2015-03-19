@@ -3,7 +3,7 @@
 
 # Set defaults
 function set_defaults() {
-    TARGET_PROFILE_FILE="./profiles/sRGB.icm"
+    TARGET_PROFILE_FILE="$(dirname ${BASH_SOURCE})/profiles/sRGB.icm"
     SIZE="200x200>"
     PAGE="0"
     DENSITY="72"
@@ -12,7 +12,7 @@ function set_defaults() {
     ALPHA="remove"
     POSTSCRIPT_FORMATS="EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS"
     VECTOR_FORMATS="MSVG,SVG,SVGZ,AI,PCT,PICT"
-    GENERIC_CMYK_PROFILE="./profiles/Apple_Generic_CMYK_Profile.icc"
+    SOURCE_PROFILE_CMYK="$(dirname ${BASH_SOURCE})/profiles/Apple_Generic_CMYK_Profile.icc"
     LOGENTRIES_URL="data.logentries.com"
     LOGENTRIES_PORT="10000"
     LOGENTRIES_TOKEN=""
@@ -29,33 +29,33 @@ function usage() {
     set_defaults
 
 	echo ""
-	echo "$(basename $0) - Convert image"
+	echo "$(basename ${BASH_SOURCE}) - Convert image"
 	echo ""
-	echo "Usage: $(basename $0) -i input_file -o output_file [options] [convert options]"
+	echo "Usage: $(basename ${BASH_SOURCE}) -i input_file -o output_file [options] [convert options]"
 	echo ""
 	echo "Options:"
-	echo "-h, --help               Show brief help."
-	echo "-v, --verbose            Verbose output." # Is more a script debug mode
- 	echo "-i, --input              Input file or URI. Mandatory."
- 	echo "-o, --output             Output file. Mandatory. Set \"-\" to send directly to standard output."
- 	echo "-t, --target-profile     Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
- 	echo "-gp, --generic-cmyk      Generic profile to use when a CMYK image without profile is given."
- 	echo "                         Default \"${GENERIC_CMYK_PROFILE}\"."
- 	echo "-p, --page, --layer      Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
- 	echo "-fp, --ps-formats        Formats to be interpreted as postscript graphic. Comma separated list."
- 	echo "                         Those will be checked (with ps2pdf) if are pure vector graphic."
- 	echo "                         Default \"${POSTSCRIPT_FORMATS}\"."
- 	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
- 	echo "                         Default \"${VECTOR_FORMATS}\"."
- 	echo "-s, --size               Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
- 	echo "-d, --density            Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
- 	echo "-q, --quality            JPEG quality. Default \"${QUALITY}\"."
- 	echo "-b, --background         Set background of image, might not be shown (depends on alpha)."
- 	echo "                         Default \"${BACKGROUND}\"."
- 	echo "-a, --alpha              Modify alpha channel of an image. Default \"${ALPHA}\"."      # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
- 	echo "-lt, --logentries-token  Logentries token. If not given no logging performed."
- 	echo "-lu, --logentries-url    Logentries url. Default \"${LOGENTRIES_URL}\"."
- 	echo "-lp, --logentries-port   Logentries port. Default \"${LOGENTRIES_PORT}\"."
+	echo "-h, --help                  Show brief help."
+	echo "-v, --verbose               Verbose output." # Is more a script debug mode
+ 	echo "-i, --input                 Input file or URI. Mandatory."
+ 	echo "-o, --output                Output file. Mandatory. Set \"-\" to send directly to standard output."
+ 	echo "-t, --target-profile        Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
+ 	echo "-spc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is given."
+ 	echo "                            Default \"${SOURCE_PROFILE_CMYK}\"."
+ 	echo "-p, --page, --layer         Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
+ 	echo "-fp, --ps-formats           Formats to be interpreted as postscript graphic. Comma separated list."
+ 	echo "                            Those will be checked (with ps2pdf) if are pure vector graphic."
+ 	echo "                            Default \"${POSTSCRIPT_FORMATS}\"."
+ 	echo "-fv, --vector-formats       Formats to be interpreted as vector graphic. comma separated list."
+ 	echo "                            Default \"${VECTOR_FORMATS}\"."
+ 	echo "-s, --size                  Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
+ 	echo "-d, --density               Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
+ 	echo "-q, --quality               JPEG quality. Default \"${QUALITY}\"."
+ 	echo "-b, --background            Set background of image, might not be shown (depends on alpha)."
+ 	echo "                            Default \"${BACKGROUND}\"."
+ 	echo "-a, --alpha                 Modify alpha channel of an image. Default \"${ALPHA}\"."      # http://www.imagemagick.org/Usage/masking/#alpha, http://www.imagemagick.org/script/command-line-options.php#alpha
+ 	echo "-lt, --logentries-token     Logentries token. If not given no logging performed."
+ 	echo "-lu, --logentries-url       Logentries url. Default \"${LOGENTRIES_URL}\"."
+ 	echo "-lp, --logentries-port      Logentries port. Default \"${LOGENTRIES_PORT}\"."
 	echo ""
 	echo "convert options: see 'convert --help'"
 	echo ""
@@ -115,12 +115,12 @@ while test $# -gt 0; do
             fi
 			shift
 			;;
-		-gp|--generic-cmyk)
+		-spc|--source-profile-cmyk)
 		    shift
             if test $# -gt 0; then
-                GENERIC_CMYK_PROFILE=$1
+                SOURCE_PROFILE_CMYK=$1
             else
-                usage_exit "No generic cmyk profile file given."
+                usage_exit "No source cmyk profile file given."
             fi
             shift
             ;;
@@ -249,6 +249,7 @@ INVALID_REGEX='[ :?"\\]'
 if [[ ${INPUT_FILE} =~ ${INVALID_REGEX} ]]; then
     SANITIZED_INPUT=${INPUT_FILE//[:?\']}
     SANITIZED_INPUT=${SANITIZED_INPUT// /_}
+    SANITIZED_INPUT=$(basename ${SANITIZED_INPUT})
 
     # @todo: Should check that does not already exists
 
@@ -340,7 +341,7 @@ else
   then
     echo "No color profile found, applying generic CMYK profile"
 
-    COMMAND+=" -profile ${GENERIC_CMYK_PROFILE}"
+    COMMAND+=" -profile ${SOURCE_PROFILE_CMYK}"
   else
     echo "No color profile found"
   fi
