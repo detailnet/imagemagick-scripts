@@ -13,8 +13,8 @@ Options:
 -i, --input                 Input file or URI. Mandatory.
 -o, --output                Output file. Mandatory. Set "-" to send directly to standard
                             output.
--t, --target-profile        Color profile file to apply. Default "./profiles/sRGB.icm".
--spc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is
+-pt, --target-profile       Color profile file to apply. Default "./profiles/sRGB.icm".
+-psc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is
                             given. Default "./profiles/Apple_Generic_CMYK_Profile.icc".
 -p, --page, --layer         Select input page or layer (PDF or PSD). Default "0".
 -fp, --ps-formats           Formats to be interpreted as postscript graphic. Comma
