@@ -228,8 +228,8 @@ fi
 URL_REGEX='(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]'
 if [[ ${INPUT_FILE} =~ ${URL_REGEX} ]]; then
     URL=${INPUT_FILE}
-    INPUT_FILE=$(basename $(echo ${URL} | cut -d@ -f2 | cut -d/ -f2- | cut -d? -f1))
-    ${WGET} -q -O ${INPUT_FILE} ${URL}
+    INPUT_FILE=$(basename "$(echo ${URL} | cut -d@ -f2 | cut -d/ -f2- | cut -d? -f1)")
+    ${WGET} -q -O "${INPUT_FILE}" "${URL}"
 fi
 
 # Sanitize input file (remove special chars, convert spaces to underscore")
@@ -264,6 +264,7 @@ function log() {
 if [[ ! -r ${INPUT_FILE} ]]; then
     echo "Input file \"${INPUT_FILE}\" not readable."
     log "ERROR: Input file \"${INPUT_FILE}\" not readable."
+    exit 1;
 fi
 
 # Test if profile is given
