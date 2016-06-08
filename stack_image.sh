@@ -54,6 +54,7 @@ function usage_exit() {
 # Check ImageMagick convert
 CONVERT=$(type -P convert)  || { echo "Script requires ImageMagick's convert but it's not installed."; exit 1; }
 WGET=$(type -P wget)  || { echo "Script requires GNU wget, but it's not installed."; exit 1; }
+BC=$(type -P bc)  || { echo "Script requires the Basic Calculator, but it's not installed."; exit 1; }
 
 if [[ $# -eq 0 ]]; then
 	usage_exit "Mandatory params not set"
@@ -176,32 +177,28 @@ fi
 # Split input files
 IFS=',' read -ra INPUT_FILES <<< "$INPUT_FILE"
 
-echo $INPUT_FILES
-
 # Check if URL input, convert supports it natively but would download every time is called. Download here.
 URL_REGEX='(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]'
 
 for ((i=0; i<${#INPUT_FILES[@]}; i++)); do
-    INPUT_FILE="${INPUT_FILES[$i]}"
-
     # @todo should check that the provided filename are unique
 
-    if [[ ${INPUT_FILE} =~ ${URL_REGEX} ]]; then
-        URL=${INPUT_FILE}
-        INPUT_FILE=$(basename "$(echo ${URL} | cut -d@ -f2 | cut -d/ -f2- | cut -d? -f1)")
-        ${WGET} -q -O "${INPUT_FILE}" "${URL}"
+    if [[ ${INPUT_FILES[$i]} =~ ${URL_REGEX} ]]; then
+        URL=${INPUT_FILES[$i]}
+        INPUT_FILES[$i]=$(basename "$(echo ${URL} | cut -d@ -f2 | cut -d/ -f2- | cut -d? -f1)")
+        ${WGET} -q -O "${INPUT_FILES[$i]}" "${URL}"
     fi
 
     # Sanitize input file (remove special chars, convert spaces to underscore")
     INVALID_REGEX='[ :?"\\]'
-    if [[ ${INPUT_FILE} =~ ${INVALID_REGEX} ]]; then
-        SANITIZED_INPUT=${INPUT_FILE//[:?\']}
+    if [[ ${INPUT_FILES[$i]} =~ ${INVALID_REGEX} ]]; then
+        SANITIZED_INPUT=${INPUT_FILES[$i]//[:?\']}
         SANITIZED_INPUT=${SANITIZED_INPUT// /_}
 
         # @todo: Should check that does not already exists
 
         # Create symbolic link so that there is no need to copy or move data
-        ln -f -s "${INPUT_FILE}" $SANITIZED_INPUT
+        ln -f -s "${INPUT_FILES[$i]}" $SANITIZED_INPUT
 
         INPUT_FILES[$i]=$SANITIZED_INPUT
         CLEANUP_FILES+=" $SANITIZED_INPUT"
@@ -233,6 +230,15 @@ function log() {
     fi
 }
 
+function check_input_exists() {
+    # Check that input file is present
+    if [[ ! -r $@ ]]; then
+        echo "Input file \"$@\" not readable."
+        log "ERROR: Input file \"$@\" not readable."
+        exit 1;
+    fi
+}
+
 ### END CONFIGURATION, BEGIN WORK ###
 
 # Override columns if more than one input file is given
@@ -240,22 +246,17 @@ if [[ ${#INPUT_FILES[@]} -gt 1 ]]; then
 	COLUMNS=${#INPUT_FILES[@]}
 fi
 
-
-## Check that input file is present
-#if [[ ! -r ${INPUT_FILE} ]]; then
-#    echo "Input file \"${INPUT_FILE}\" not readable."
-#    log "ERROR: Input file \"${INPUT_FILE}\" not readable."
-#    exit 1;
-#fi
-
 # Build convert command, NOTE: order of commands is very important for ImageMagick convert
 COMMAND="${CONVERT}"
+
+check_input_exists ${INPUT_FILES[0]}
 
 if [[ $COLUMNS -gt 1 ]]; then
     COMMAND+=" ( ${INPUT_FILES[0]} "
 
     if [[ ${#INPUT_FILES[@]} -gt 1 ]]; then
         for i in `seq 1 $(($COLUMNS - 1))`; do
+          check_input_exists ${INPUT_FILES[$i]}
           COMMAND+=" ${INPUT_FILES[$i]}"
         done
     else
@@ -274,8 +275,8 @@ if [[ $ROWS -gt 1 ]]; then
     CURRENT_Y_OFFSET="0"
 
     for i in `seq 1 $(($ROWS - 1))`; do
-       CURRENT_X_OFFSET=$(bc <<< "${CURRENT_X_OFFSET} + ${ROW_X_OFFSET}")
-       CURRENT_Y_OFFSET=$(bc <<< "${CURRENT_Y_OFFSET} + ${ROW_Y_OFFSET}")
+       CURRENT_X_OFFSET=$(${BC} <<< "${CURRENT_X_OFFSET} + ${ROW_X_OFFSET}")
+       CURRENT_Y_OFFSET=$(${BC} <<< "${CURRENT_Y_OFFSET} + ${ROW_Y_OFFSET}")
 
        COMMAND+=" ( +clone -repage +${CURRENT_X_OFFSET}+${CURRENT_Y_OFFSET} )"
     done

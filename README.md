@@ -74,3 +74,4 @@ convert options: see 'convert --help'
 - [Ghostscript ps2pdf](http://www.ghostscript.com/doc/9.14/Ps2pdf.htm) Usually packaged with ImageMagick distribution.
 - [wget](http://www.gnu.org/software/wget/)
 - `telnet` - required to log processing to [Logentries](https://logentries.com/)
+- [Basic Calculator](http://www.gnu.org/software/bc/) 
