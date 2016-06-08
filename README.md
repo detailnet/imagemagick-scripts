@@ -43,7 +43,32 @@ Notes:
 - Density input format is defined by an ImageMagick [density](http://www.imagemagick.org/script/command-line-options.php#density)
 - Alpha channel manipulation, trough alpha and background params, is defined by ImageMagick [alpha](http://www.imagemagick.org/script/command-line-options.php#alpha); here some [examples](http://www.imagemagick.org/Usage/masking#alpha_channel)
 
-Requirements:
+## stack_image
+```bash
+stack_image.sh - Stack image(s)
+
+Usage: stack_image.sh -i input_file[,input_file] -o output_file [options] [convert options]
+
+This script best works with images with a correct alpha channel set, and always with a transparent background.
+
+Options:
+-h, --help               Show brief help.
+-v, --verbose            Verbose output.
+-i, --input              Input file(s) or URI(s). Comma separated. Mandatory.
+-o, --output             Output file. Mandatory. Set "-" to send directly to standard output.
+-c, --columns            Column count, ignored if more than one input file is provided. Default "1".
+-cm, --column-mode       Append strategy for column: "right-to-left" (short "rl") or "top-to-bottom" (short "tb"). Default "rl".
+-r, --rows               Rows count, Default "3".
+-rx, --row-x-offset      Row placement offset on X-axis (in pixels). Default "-50".
+-ry, --row-y-offset      Row placement offset on Y-axis (in pixels). Default "50".
+-lt, --logentries-token  Logentries token. If not given no logging performed.
+-lu, --logentries-url    Logentries url. Default "data.logentries.com".
+-lp, --logentries-port   Logentries port. Default "10000".
+
+convert options: see 'convert --help'
+```
+
+# Requirements
 - [Bourne Again SHell](http://www.gnu.org/software/bash/)
 - [ImageMagick's convert](http://www.imagemagick.org/script/convert.php)
 - [Ghostscript ps2pdf](http://www.ghostscript.com/doc/9.14/Ps2pdf.htm) Usually packaged with ImageMagick distribution.
