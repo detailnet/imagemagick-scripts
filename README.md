@@ -49,7 +49,8 @@ stack_image.sh - Stack image(s)
 
 Usage: stack_image.sh -i input_file[,input_file] -o output_file [options] [convert options]
 
-This script best works with images with a correct alpha channel set, and always with a transparent background.
+This script best works with images with a correct alpha channel set, and always with a transparent 
+background.
 
 Options:
 -h, --help               Show brief help.
@@ -57,7 +58,11 @@ Options:
 -i, --input              Input file(s) or URI(s). Comma separated. Mandatory.
 -o, --output             Output file. Mandatory. Set "-" to send directly to standard output.
 -c, --columns            Column count, ignored if more than one input file is provided. Default "1".
--cm, --column-mode       Append strategy for column: "right-to-left" (short "rl") or "top-to-bottom" (short "tb"). Default "rl".
+-cm, --column-mode       Append strategy for columns to generate the front image: "left-to-right" 
+                         (short "lr"), "bottom-to-top" (short "bt"), "right-to-left" (short "rl") or 
+                         "top-to-bottom" (short "tb"). Default "lr".
+-cx, --column-x-offset   Column placement offset on X-axis (in pixels). Default "0".
+-cy, --column-y-offset   Column placement offset on Y-axis (in pixels). Default "0".
 -r, --rows               Rows count, Default "3".
 -rx, --row-x-offset      Row placement offset on X-axis (in pixels). Default "-50".
 -ry, --row-y-offset      Row placement offset on Y-axis (in pixels). Default "50".

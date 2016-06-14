@@ -4,14 +4,19 @@
 # Set defaults
 function set_defaults() {
     COLUMNS="1"
+    COLUMN_X_OFFSET="0"
+    COLUMN_Y_OFFSET="0"
     ROWS="3"
     ROW_X_OFFSET="-50"
     ROW_Y_OFFSET="50"
-    COLS_MODE="rl"
+    COLS_MODE="lr"
     LOGENTRIES_URL="data.logentries.com"
     LOGENTRIES_PORT="10000"
     LOGENTRIES_TOKEN=""
 }
+
+OUTPUT_TEXT="output.txt"
+CLEANUP_FILES="${OUTPUT_TEXT}"
 
 set_defaults
 
@@ -32,7 +37,9 @@ function usage() {
  	echo "-i, --input              Input file(s) or URI(s). Comma separated. Mandatory."
  	echo "-o, --output             Output file. Mandatory. Set \"-\" to send directly to standard output."
  	echo "-c, --columns            Column count, ignored if more than one input file is provided. Default \"${COLUMNS}\"."
- 	echo "-cm, --column-mode       Append strategy for column: \"right-to-left\" (short \"rl\") or \"top-to-bottom\" (short \"tb\"). Default \"${COLS_MODE}\"."
+ 	echo "-cm, --column-mode       Append strategy for columns to generate the front image: \"left-to-right\" (short \"lr\"), \"bottom-to-top\" (short \"bt\"), \"right-to-left\" (short \"rl\") or \"top-to-bottom\" (short \"tb\"). Default \"${COLS_MODE}\"."
+ 	echo "-cx, --column-x-offset   Column placement offset on X-axis (in pixels). Default \"${COLUMN_X_OFFSET}\"."
+ 	echo "-cy, --column-y-offset   Column placement offset on Y-axis (in pixels). Default \"${COLUMN_Y_OFFSET}\"."
  	echo "-r, --rows               Rows count, Default \"${ROWS}\"."
  	echo "-rx, --row-x-offset      Row placement offset on X-axis (in pixels). Default \"${ROW_X_OFFSET}\"."
  	echo "-ry, --row-y-offset      Row placement offset on Y-axis (in pixels). Default \"${ROW_Y_OFFSET}\"."
@@ -107,6 +114,24 @@ while test $# -gt 0; do
             fi
 			shift
 			;;
+		-cx|--column-x-offset)
+            shift
+            if test $# -gt 0; then
+                COLUMN_X_OFFSET=$1
+            else
+                usage_exit "No column x offset given."
+            fi
+			shift
+			;;
+        -cy|--column-y-offset)
+            shift
+            if test $# -gt 0; then
+                COLUMN_Y_OFFSET=$1
+            else
+                usage_exit "No column y offset given."
+            fi
+			shift
+			;;
         -r|--rows)
             shift
             if test $# -gt 0; then
@@ -174,7 +199,55 @@ if [[ "AAA${INPUT_FILE}AAA" == "AAAAAA" ]]; then
 	usage_exit "No input file defined. (mandatory)"
 fi
 
-# Split input files
+# Check that output file is set
+if [[ "AAA${OUTPUT_FILE}AAA" == "AAAAAA" ]]; then
+	usage_exit "No output file defined. (mandatory)"
+fi
+
+# Check column modes
+case "$COLS_MODE" in
+	lr|ltr|left+to-right|east)
+	    FRONT_COMPOSITION="E"
+		;;
+	rl|rtl|right-to-left|west)
+	    FRONT_COMPOSITION="W"
+		;;
+	bt|btt|bottom-to-top|north)
+		FRONT_COMPOSITION="N"
+        ;;
+	tb|ttb|top-to-bottom|south)
+		FRONT_COMPOSITION="S"
+        ;;
+    *)
+        usage_exit "Invalid append mode, must be \"left-to-right\", \"bottom-to-top\", \"right-to-left\" or \"top-to-bottom\"."
+    	;;
+esac
+
+function log() {
+    if [[ ! "AAA${LOGENTRIES_TOKEN}AAA" == "AAAAAA" ]]; then
+        echo "${LOGENTRIES_TOKEN} $@" | telnet $LOGENTRIES_URL $LOGENTRIES_PORT >/dev/null 2>&1
+    fi
+}
+
+function check_input_exists() {
+    # Check that input file is present
+    if [[ ! -r $@ ]]; then
+        echo "Input file \"$@\" not readable."
+        log "ERROR: Input file \"$@\" not readable."
+        exit 1;
+    fi
+}
+
+### END CONFIGURATION, BEGIN WORK ###
+
+
+# Note: To generate the front image (driven by columns) we could use convert's "-/+" append function, but this does not
+#       permits to set an offset, therefore we are going to grab the input image(s) size and do the positioning on our own
+declare -a IMAGE_WIDTHS
+declare -a IMAGE_HEIGHTS
+
+# Split input files and grab its infos
+declare -a INPUT_FILES
 IFS=',' read -ra INPUT_FILES <<< "$INPUT_FILE"
 
 # Check if URL input, convert supports it natively but would download every time is called. Download here.
@@ -203,43 +276,15 @@ for ((i=0; i<${#INPUT_FILES[@]}; i++)); do
         INPUT_FILES[$i]=$SANITIZED_INPUT
         CLEANUP_FILES+=" $SANITIZED_INPUT"
     fi
+
+    check_input_exists ${INPUT_FILES[$i]}
+
+    # Grab image infos
+    INFO=`${CONVERT} "${INPUT_FILES[$i]}[0]" -print "%w %h\n" null: 2>/dev/null`
+
+    IMAGE_WIDTHS[$i]=`echo ${INFO} | cut -d' ' -f1`
+    IMAGE_HEIGHTS[$i]=`echo ${INFO} | cut -d' ' -f2`
 done
-
-# Check that output file is set
-if [[ "AAA${OUTPUT_FILE}AAA" == "AAAAAA" ]]; then
-	usage_exit "No output file defined. (mandatory)"
-fi
-
-# Check column modes
-case "$COLS_MODE" in
-	rl|rtl|right-to-left)
-	    COL_MERGE_CMD="+append"
-		;;
-	tb|ttb|top-to-bottom)
-		COL_MERGE_CMD="-append"
-        ;;
-    *)
-        usage_exit "Invalid append mode, must be \"right-to-left\" or \"top-to-bottom\"."
-    	;;
-esac
-
-
-function log() {
-    if [[ ! "AAA${LOGENTRIES_TOKEN}AAA" == "AAAAAA" ]]; then
-        echo "${LOGENTRIES_TOKEN} $@" | telnet $LOGENTRIES_URL $LOGENTRIES_PORT >/dev/null 2>&1
-    fi
-}
-
-function check_input_exists() {
-    # Check that input file is present
-    if [[ ! -r $@ ]]; then
-        echo "Input file \"$@\" not readable."
-        log "ERROR: Input file \"$@\" not readable."
-        exit 1;
-    fi
-}
-
-### END CONFIGURATION, BEGIN WORK ###
 
 # Override columns if more than one input file is given
 if [[ ${#INPUT_FILES[@]} -gt 1 ]]; then
@@ -249,30 +294,81 @@ fi
 # Build convert command, NOTE: order of commands is very important for ImageMagick convert
 COMMAND="${CONVERT}"
 
-check_input_exists ${INPUT_FILES[0]}
+# Build front image (driven by columns)
+CURRENT_X_POS="0"
+CURRENT_Y_POS="0"
+MIN_X="0"
+MIN_Y="0"
+
+function calculate_next_front_position() {
+    INDEX=$@
+    PREV_INDEX=0
+
+    # Image INDEX can be 0 only if we are working with COLUMNS == 1
+    if [[ ${INDEX} -ne 0 ]]; then
+        PREV_INDEX=$(($INDEX - 1))
+    fi
+
+    # Note: Images have to be collated as would be on a table,
+    #       therefore have to internally move the coordinates to the bottom-left corner,
+    #       but return values for the top-left one (correction has to be done only for the "lr" and "tr" compositions)
+
+    # Check column modes
+    case "$FRONT_COMPOSITION" in
+        lr|ltr|left+to-right|east|E)
+            CURRENT_X_POS=$(${BC} <<< "${CURRENT_X_POS} + ${IMAGE_WIDTHS[$PREV_INDEX]}                             + ${COLUMN_X_OFFSET}")
+            CURRENT_Y_POS=$(${BC} <<< "${CURRENT_Y_POS} + ${IMAGE_HEIGHTS[$PREV_INDEX]} - ${IMAGE_HEIGHTS[$INDEX]} + ${COLUMN_Y_OFFSET}")
+            ;;
+        rl|rtl|right-to-left|west|W)
+            CURRENT_X_POS=$(${BC} <<< "${CURRENT_X_POS}                                 - ${IMAGE_WIDTHS[$INDEX]}  - ${COLUMN_X_OFFSET}")
+            CURRENT_Y_POS=$(${BC} <<< "${CURRENT_Y_POS} + ${IMAGE_HEIGHTS[$PREV_INDEX]} - ${IMAGE_HEIGHTS[$INDEX]} + ${COLUMN_Y_OFFSET}")
+            ;;
+        tb|ttb|top-to-bottom|south|S)
+            CURRENT_X_POS=$(${BC} <<< "${CURRENT_X_POS}                                                            + ${COLUMN_X_OFFSET}")
+            CURRENT_Y_POS=$(${BC} <<< "${CURRENT_Y_POS} + ${IMAGE_HEIGHTS[$PREV_INDEX]}                            + ${COLUMN_Y_OFFSET}")
+            ;;
+        bt|btt|bottom-to-top|north|N)
+            CURRENT_X_POS=$(${BC} <<< "${CURRENT_X_POS}                                                            + ${COLUMN_X_OFFSET}")
+            CURRENT_Y_POS=$(${BC} <<< "${CURRENT_Y_POS}                                - ${IMAGE_HEIGHTS[$INDEX]}  - ${COLUMN_Y_OFFSET}")
+            ;;
+    esac
+
+    # Get min values, needed for the row compositions to avoid gaps, they will be the origin for row calculations
+    if [[ ${CURRENT_X_POS} -lt  ${MIN_X} ]] ; then
+        MIN_X=${CURRENT_X_POS}
+    fi
+
+    if [[ ${CURRENT_Y_POS} -lt  ${MIN_Y} ]] ; then
+        MIN_Y=${CURRENT_Y_POS}
+    fi
+}
 
 if [[ $COLUMNS -gt 1 ]]; then
-    COMMAND+=" ( ${INPUT_FILES[0]} "
+    COMMAND+=" ( ${INPUT_FILES[0]}[0] "
 
     if [[ ${#INPUT_FILES[@]} -gt 1 ]]; then
         for i in `seq 1 $(($COLUMNS - 1))`; do
-          check_input_exists ${INPUT_FILES[$i]}
-          COMMAND+=" ${INPUT_FILES[$i]}"
+          calculate_next_front_position ${i}
+
+          COMMAND+=" ( ${INPUT_FILES[$i]}[0] -repage +${CURRENT_X_POS}+${CURRENT_Y_POS} )"
         done
     else
         for i in `seq 1 $(($COLUMNS - 1))`; do
-            COMMAND+=" ( +clone )"
+            calculate_next_front_position 0
+
+            COMMAND+=" ( +clone -repage +${CURRENT_X_POS}+${CURRENT_Y_POS} )"
         done
     fi
 
-    COMMAND+=" ${COL_MERGE_CMD} )"
+    COMMAND+=" -background transparent -layers merge )"
 else
-    COMMAND+=" ${INPUT_FILES[0]}"
+    COMMAND+=" ${INPUT_FILES[0]}[0]"
 fi
 
+# Build rows (from behind to front)
 if [[ $ROWS -gt 1 ]]; then
-    CURRENT_X_OFFSET="0"
-    CURRENT_Y_OFFSET="0"
+    CURRENT_X_OFFSET=${MIN_X}
+    CURRENT_Y_OFFSET=${MIN_Y}
 
     for i in `seq 1 $(($ROWS - 1))`; do
        CURRENT_X_OFFSET=$(${BC} <<< "${CURRENT_X_OFFSET} + ${ROW_X_OFFSET}")
