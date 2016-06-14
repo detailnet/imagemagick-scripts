@@ -225,7 +225,7 @@ esac
 
 function log() {
     if [[ ! "AAA${LOGENTRIES_TOKEN}AAA" == "AAAAAA" ]]; then
-        echo "${LOGENTRIES_TOKEN} $@" | telnet $LOGENTRIES_URL $LOGENTRIES_PORT >/dev/null 2>&1
+        echo "${LOGENTRIES_TOKEN} $@" | telnet ${LOGENTRIES_URL} ${LOGENTRIES_PORT} >/dev/null 2>&1
     fi
 }
 
@@ -271,10 +271,10 @@ for ((i=0; i<${#INPUT_FILES[@]}; i++)); do
         # @todo: Should check that does not already exists
 
         # Create symbolic link so that there is no need to copy or move data
-        ln -f -s "${INPUT_FILES[$i]}" $SANITIZED_INPUT
+        ln -f -s "${INPUT_FILES[$i]}" ${SANITIZED_INPUT}
 
-        INPUT_FILES[$i]=$SANITIZED_INPUT
-        CLEANUP_FILES+=" $SANITIZED_INPUT"
+        INPUT_FILES[$i]=${SANITIZED_INPUT}
+        CLEANUP_FILES+=" ${SANITIZED_INPUT}"
     fi
 
     check_input_exists ${INPUT_FILES[$i]}
@@ -311,7 +311,7 @@ function calculate_next_front_position() {
 
     # Note: Images have to be collated as would be on a table,
     #       therefore have to internally move the coordinates to the bottom-left corner,
-    #       but return values for the top-left one (correction has to be done only for the "lr" and "tr" compositions)
+    #       but return values for the top-left one (correction has to be done only for the "lr" and "rl" compositions on the Y axis)
 
     # Check column modes
     case "$FRONT_COMPOSITION" in
@@ -329,7 +329,7 @@ function calculate_next_front_position() {
             ;;
         bt|btt|bottom-to-top|north|N)
             CURRENT_X_POS=$(${BC} <<< "${CURRENT_X_POS}                                                            + ${COLUMN_X_OFFSET}")
-            CURRENT_Y_POS=$(${BC} <<< "${CURRENT_Y_POS}                                - ${IMAGE_HEIGHTS[$INDEX]}  - ${COLUMN_Y_OFFSET}")
+            CURRENT_Y_POS=$(${BC} <<< "${CURRENT_Y_POS}                                 - ${IMAGE_HEIGHTS[$INDEX]} - ${COLUMN_Y_OFFSET}")
             ;;
     esac
 
@@ -348,9 +348,9 @@ if [[ $COLUMNS -gt 1 ]]; then
 
     if [[ ${#INPUT_FILES[@]} -gt 1 ]]; then
         for i in `seq 1 $(($COLUMNS - 1))`; do
-          calculate_next_front_position ${i}
+            calculate_next_front_position ${i}
 
-          COMMAND+=" ( ${INPUT_FILES[$i]}[0] -repage +${CURRENT_X_POS}+${CURRENT_Y_POS} )"
+            COMMAND+=" ( ${INPUT_FILES[$i]}[0] -repage +${CURRENT_X_POS}+${CURRENT_Y_POS} )"
         done
     else
         for i in `seq 1 $(($COLUMNS - 1))`; do
@@ -366,11 +366,11 @@ else
 fi
 
 # Build rows (from behind to front)
-if [[ $ROWS -gt 1 ]]; then
+if [[ ${ROWS} -gt 1 ]]; then
     CURRENT_X_OFFSET=${MIN_X}
     CURRENT_Y_OFFSET=${MIN_Y}
 
-    for i in `seq 1 $(($ROWS - 1))`; do
+    for i in `seq 1 $((${ROWS} - 1))`; do
        CURRENT_X_OFFSET=$(${BC} <<< "${CURRENT_X_OFFSET} + ${ROW_X_OFFSET}")
        CURRENT_Y_OFFSET=$(${BC} <<< "${CURRENT_Y_OFFSET} + ${ROW_Y_OFFSET}")
 
