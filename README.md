@@ -22,8 +22,8 @@ Options:
                          graphic. Default "EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS".
 -fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated
                          list. Default "MSVG,SVG,SVGZ,AI,PCT,PICT".
--s, --size               Thumbnail size. Default "200x200>".
--d, --density            Density. Default "72".
+-s, --size               Thumbnail size. Empty for no processing. Default "".
+-d, --density            Density. Empty for no processing. Default "".
 -q, --quality            JPEG quality. Default "80".
 -b, --background         Set background of image, might not be shown (depends on alpha).
                          Default "white".

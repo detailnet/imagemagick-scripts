@@ -4,9 +4,9 @@
 # Set defaults
 function set_defaults() {
     TARGET_PROFILE_FILE="./profiles/sRGB.icm"
-    SIZE="200x200>"
+    SIZE=""
     PAGE="0"
-    DENSITY="72"
+    DENSITY=""
     QUALITY="80"
     BACKGROUND="white"
     ALPHA="remove"
@@ -47,8 +47,8 @@ function usage() {
  	echo "                         Default \"${POSTSCRIPT_FORMATS}\"."
  	echo "-fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated list."
  	echo "                         Default \"${VECTOR_FORMATS}\"."
- 	echo "-s, --size               Thumbnail size. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
- 	echo "-d, --density            Density. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
+ 	echo "-s, --size               Thumbnail size. Empty for no processing. Default \"${SIZE}\"."                         # http://www.imagemagick.org/script/command-line-processing.php#geometry
+ 	echo "-d, --density            Density. Empty for no processing. Default \"${DENSITY}\"."                             # http://www.imagemagick.org/script/command-line-options.php#density
  	echo "-q, --quality            JPEG quality. Default \"${QUALITY}\"."
  	echo "-b, --background         Set background of image, might not be shown (depends on alpha)."
  	echo "                         Default \"${BACKGROUND}\"."
@@ -310,6 +310,16 @@ if [ ! ${IS_VECTOR} -eq 0 ]; then
          if [ $1 -gt $2 ]; then echo $1; else echo $2; fi
     }
 
+    if [[ "AAA${DENSITY}AAA" == "AAAAAA" ]]; then
+        DENSITY="72"
+        echo "Vector graphic image needs a target density, but none defined. Using \"${DENSITY}\"."
+    fi
+
+    if [[ "AAA${SIZE}AAA" == "AAAAAA" ]]; then
+        SIZE="300x300>"
+        echo "Vector graphic image needs a target size, but none defined. Using \"${SIZE}\"."
+    fi
+
     DEST_SIZE_X=`expr match "${SIZE}" '\([0-9]\+\).*$'`           # OR ${SIZE%x*}
     DEST_SIZE_Y=`expr match "${SIZE}" '[0-9]\+x\?\([0-9]\+\).*$'` # @todo: refactor eg "72" returns "2" .. ok for now, because we need the max only
     DEST_MAX=$(max ${DEST_SIZE_X} ${DEST_SIZE_Y})
@@ -349,8 +359,15 @@ fi
 COMMAND+=" ${INPUT_FILE}[${PAGE}]"
 COMMAND+=" -profile ${TARGET_PROFILE_FILE}"
 COMMAND+=" -background ${BACKGROUND} -alpha ${ALPHA}"
-COMMAND+=" -thumbnail ${SIZE}"
-COMMAND+=" -density ${DENSITY}"
+
+if [[ ! "AAA${SIZE}AAA" == "AAAAAA" ]]; then
+    COMMAND+=" -thumbnail ${SIZE}"
+fi
+
+if [[ ! "AAA${DENSITY}AAA" == "AAAAAA" ]]; then
+    COMMAND+=" -density ${DENSITY}"
+fi
+
 COMMAND+=" -quality ${QUALITY}"
 COMMAND+=" ${REMAINING}"
 COMMAND+=" ${OUTPUT_FILE}"
