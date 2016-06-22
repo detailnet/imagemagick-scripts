@@ -7,30 +7,30 @@ convert_image.sh - Convert image
 
 Usage: convert_image.sh -i input_file -o output_file [options] [convert options]
 
-Options:
--h, --help               Show brief help.
--v, --verbose            Verbose output.
--i, --input              Input file or URI. Mandatory.
--o, --output             Output file. Mandatory. Set "-" to send directly to standard
-                         output.
--t, --target-profile     Color profile file to apply. Default "./profiles/sRGB.icm".
--gp, --generic-cmyk      Generic profile to use when a CMYK image without profile is
-                         given. Default "./profiles/Apple_Generic_CMYK_Profile.icc".
--p, --page, --layer      Select input page or layer (PDF or PSD). Default "0".
--fp, --ps-formats        Formats to be interpreted as postscript graphic. Comma separated
-                         list. Those will be checked (with ps2pdf) if are pure vector
-                         graphic. Default "EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS".
--fv, --vector-formats    Formats to be interpreted as vector graphic. comma separated
-                         list. Default "MSVG,SVG,SVGZ,AI,PCT,PICT".
--s, --size               Thumbnail size. Empty for no processing. Default "".
--d, --density            Density. Empty for no processing.  Default "".
--q, --quality            JPEG quality. Default "80".
--b, --background         Set background of image, might not be shown (depends on alpha).
-                         Default "white".
--a, --alpha              Modify alpha channel of an image. Default "remove".
--lt, --logentries-token  Logentries token. If not given no logging performed.
--lu, --logentries-url    Logentries url. Default "data.logentries.com".
--lp, --logentries-port   Logentries port. Default "10000".
+-h, --help                  Show brief help.
+-v, --verbose               Verbose output.
+-i, --input                 Input file or URI. Mandatory.
+-o, --output                Output file. Mandatory. Set "-" to send directly to standard
+                            output.
+-pt, --target-profile       Color profile file to apply. Default "./profiles/sRGB.icm".
+-psc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is
+                            given. Default "./profiles/Apple_Generic_CMYK_Profile.icc".
+-p, --page, --layer         Select input page or layer (PDF or PSD). Default "0".
+-fp, --ps-formats           Formats to be interpreted as postscript graphic. Comma
+                            separated list. Those will be checked (with ps2pdf) if are
+                            pure vector graphic.
+                            Default "EPDF,EPI,EPS,EPSF,EPSI,PDF,PDFA,PS".
+-fv, --vector-formats       Formats to be interpreted as vector graphic. comma separated
+                            list. Default "MSVG,SVG,SVGZ,AI,PCT,PICT".
+-s, --size                  Thumbnail size. Empty for no processing. Default "".
+-d, --density               Density. Empty for no processing.  Default "".
+-q, --quality               JPEG quality. Default "80".
+-b, --background            Set background of image, might not be shown (depends on
+                            alpha). Default "white".
+-a, --alpha                 Modify alpha channel of an image. Default "remove".
+-lt, --logentries-token     Logentries token. If not given no logging performed.
+-lu, --logentries-url       Logentries url. Default "data.logentries.com".
+-lp, --logentries-port      Logentries port. Default "10000".
 
 convert options: see 'convert --help'
 ```

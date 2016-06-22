@@ -3,7 +3,7 @@
 
 # Set defaults
 function set_defaults() {
-    TARGET_PROFILE_FILE="./profiles/sRGB.icm"
+    TARGET_PROFILE_FILE="$(dirname ${BASH_SOURCE})/profiles/sRGB.icm"
     SIZE=""
     PAGE="0"
     DENSITY=""
@@ -38,7 +38,7 @@ function usage() {
 	echo "-v, --verbose               Verbose output." # Is more a script debug mode
  	echo "-i, --input                 Input file or URI. Mandatory."
  	echo "-o, --output                Output file. Mandatory. Set \"-\" to send directly to standard output."
- 	echo "-t, --target-profile        Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
+ 	echo "-pt, --target-profile       Color profile file to apply. Default \"${TARGET_PROFILE_FILE}\"."
  	echo "-psc, --source-profile-cmyk Generic profile to use when a CMYK image without profile is given."
  	echo "                            Default \"${SOURCE_PROFILE_CMYK}\"."
  	echo "-p, --page, --layer         Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
