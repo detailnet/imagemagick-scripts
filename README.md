@@ -44,6 +44,25 @@ Notes:
 - Density input format is defined by an ImageMagick [density](http://www.imagemagick.org/script/command-line-options.php#density)
 - Alpha channel manipulation, trough alpha and background params, is defined by ImageMagick [alpha](http://www.imagemagick.org/script/command-line-options.php#alpha); here some [examples](http://www.imagemagick.org/Usage/masking#alpha_channel)
 
+## export_image
+```bash
+export_image.sh - Convert image to different format
+
+Usage: export_image.sh -i input_file -o output_file [options] [convert options]
+
+Options:
+-h, --help                  Show brief help.
+-v, --verbose               Verbose output.
+-i, --input                 Input file or URI. Mandatory.
+-o, --output                Output file. Mandatory. Set "-" to send directly to standard
+                            output.
+-lt, --logentries-token     Logentries token. If not given no logging performed.
+-lu, --logentries-url       Logentries url. Default "data.logentries.com".
+-lp, --logentries-port      Logentries port. Default "10000".
+
+convert options: see 'convert --help'
+```
+
 ## stack_image
 ```bash
 stack_image.sh - Stack image(s)
