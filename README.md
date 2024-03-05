@@ -56,6 +56,7 @@ Options:
 -i, --input                 Input file or URI. Mandatory.
 -o, --output                Output file. Mandatory. Set "-" to send directly to standard
                             output.
+-p, --page, --layer         Select input page or layer (PDF or PSD). Default "0".
 -lt, --logentries-token     Logentries token. If not given no logging performed.
 -lu, --logentries-url       Logentries url. Default "data.logentries.com".
 -lp, --logentries-port      Logentries port. Default "10000".

@@ -88,7 +88,7 @@ while test $# -gt 0; do
 		    shift
 		    set -x
             ;;
-        -i|--input)
+    -i|--input)
             shift
             if test $# -gt 0; then
                 INPUT_FILE=$1
@@ -97,7 +97,7 @@ while test $# -gt 0; do
             fi
 			shift
 			;;
-        -o|--output)
+    -o|--output)
             shift
             if test $# -gt 0; then
                 OUTPUT_FILE=$1

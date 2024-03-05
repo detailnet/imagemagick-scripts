@@ -3,6 +3,7 @@
 
 # Set defaults
 function set_defaults() {
+    PAGE="0"
     LOGENTRIES_URL="data.logentries.com"
     LOGENTRIES_PORT="10000"
     LOGENTRIES_TOKEN=""
@@ -27,6 +28,7 @@ function usage() {
 	echo "-v, --verbose               Verbose output." # Is more a script debug mode
  	echo "-i, --input                 Input file or URI. Mandatory."
  	echo "-o, --output                Output file. Mandatory. Set \"-\" to send directly to standard output."
+ 	echo "-p, --page, --layer         Select input page or layer (PDF or PSD). Default \"${PAGE}\"."
  	echo "-lt, --logentries-token     Logentries token. If not given no logging performed."
  	echo "-lu, --logentries-url       Logentries url. Default \"${LOGENTRIES_URL}\"."
  	echo "-lp, --logentries-port      Logentries port. Default \"${LOGENTRIES_PORT}\"."
@@ -79,6 +81,15 @@ while test $# -gt 0; do
             fi
 			shift
 			;;
+		-p|--page|--layer)
+		    shift
+            if test $# -gt 0; then
+                PAGE=$1
+            else
+                usage_exit "No page given.";
+            fi
+			shift
+		    ;;
 		*)
 			break
 			;;
@@ -137,7 +148,7 @@ if [[ ! -r ${INPUT_FILE} ]]; then
 fi
 
 # Build convert command, NOTE: order of commands is very important for ImageMagick convert
-COMMAND="${CONVERT} ${INPUT_FILE} ${REMAINING} ${OUTPUT_FILE}"
+COMMAND="${CONVERT} ${INPUT_FILE}[${PAGE}] ${REMAINING} ${OUTPUT_FILE}"
 
 # Execute
 ${COMMAND} 2>&1 | tee ${OUTPUT_TEXT}
