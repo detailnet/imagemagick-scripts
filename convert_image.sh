@@ -280,6 +280,13 @@ if [[ ! -r ${INPUT_FILE} ]]; then
     exit 1;
 fi
 
+# Check that input file is not empty
+if [[ ! -s ${INPUT_FILE} ]]; then
+    echo "Input file \"${INPUT_FILE}\" is empty."
+    log "ERROR: Input file \"${INPUT_FILE}\" is empty."
+    exit 1;
+fi
+
 # Test if profile is given
 ${CONVERT} ${INPUT_FILE}[${PAGE}] "${PROFILE_FILE}" 2>/dev/null
 HAS_NO_PROFILE=$?
@@ -347,7 +354,7 @@ then
 
   COMMAND+=" -profile ${PROFILE_FILE}"
 else
-  if [ ${COLOR_SPACE} == "CMYK" ]
+  if [ "${COLOR_SPACE}" == "CMYK" ]
   then
     echo "No color profile found, applying generic CMYK profile"
 
